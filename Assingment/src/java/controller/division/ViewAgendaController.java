@@ -13,6 +13,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
+import model.Employee;
 import model.RequestForLeave;
 import model.iam.User;
 
@@ -26,21 +28,52 @@ public class ViewAgendaController extends BaseRequiredAuthorizationController {
         processGet(req, resp, user); // chỉ dùng GET cho hiển thị
     }
 
-    @Override
-    protected void processGet(HttpServletRequest req, HttpServletResponse resp, User user)
-            throws ServletException, IOException {
+@Override
+protected void processGet(HttpServletRequest req, HttpServletResponse resp, User user)
+        throws ServletException, IOException {
 
-        // 1️⃣ Lấy employee ID từ user đang đăng nhập
-        EnrollmentDBContext enrollDB = new EnrollmentDBContext();
-        int eid = enrollDB.getEmployeeIdByUserId(user.getId());
+    EnrollmentDBContext enrollDB = new EnrollmentDBContext();
+    int eid = enrollDB.getEmployeeIdByUserId(user.getId());
 
-        // 2️⃣ Lấy danh sách các đơn nghỉ của nhân viên và cấp dưới
-        RequestForLeaveDBContext rflDB = new RequestForLeaveDBContext();
-        ArrayList<RequestForLeave> requests = rflDB.getByEmployeeAndSubodiaries(eid);
+    // Lấy khoảng thời gian từ request
+    String fromRaw = req.getParameter("from");
+    String toRaw = req.getParameter("to");
 
-        // 3️⃣ Gửi danh sách sang view để hiển thị
-        req.setAttribute("requests", requests);
-        req.getRequestDispatcher("../view/division/agenda.jsp").forward(req, resp);
+    java.sql.Date today = new java.sql.Date(System.currentTimeMillis());
+    java.sql.Date sevenDaysAgo = new java.sql.Date(today.getTime() - 6L * 24 * 60 * 60 * 1000);
+
+    java.sql.Date from = (fromRaw == null || fromRaw.isEmpty()) ? sevenDaysAgo : java.sql.Date.valueOf(fromRaw);
+    java.sql.Date to = (toRaw == null || toRaw.isEmpty()) ? today : java.sql.Date.valueOf(toRaw);
+
+    // Lấy danh sách đơn nghỉ
+    RequestForLeaveDBContext db = new RequestForLeaveDBContext();
+    ArrayList<RequestForLeave> requests = db.getLeavesInRangeByDivision(eid, from, to);
+
+    // Tạo danh sách ngày
+    ArrayList<java.sql.Date> days = new ArrayList<>();
+    for (long d = from.getTime(); d <= to.getTime(); d += 86400000L) { // cộng 1 ngày
+        days.add(new java.sql.Date(d));
     }
+
+    // Danh sách nhân viên
+    ArrayList<Employee> employees = new ArrayList<>();
+    for (RequestForLeave r : requests) {
+        boolean exists = false;
+        for (Employee e : employees) {
+            if (e.getId() == r.getCreated_by().getId()) {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists) employees.add(r.getCreated_by());
+    }
+
+    req.setAttribute("from", from);
+    req.setAttribute("to", to);
+    req.setAttribute("requests", requests);
+    req.setAttribute("days", days);
+    req.setAttribute("employees", employees);
+    req.getRequestDispatcher("../view/division/agenda.jsp").forward(req, resp);
+}
 
 }
