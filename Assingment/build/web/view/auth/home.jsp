@@ -138,7 +138,7 @@
 </head>
 <body>
 <header>
-    <h2>Hệ thống Quản lý Nghỉ phép</h2>
+    <h2>My Empire</h2>
     <div class="user-menu" onclick="toggleMenu()">
         <div class="avatar-small"></div>
         <div class="dropdown" id="dropdownMenu">
