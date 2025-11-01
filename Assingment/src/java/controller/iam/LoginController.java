@@ -28,26 +28,26 @@ public class LoginController extends HttpServlet {
         String username = req.getParameter("username");
         String password = req.getParameter("password");
 
-        // validation cơ bản
+        // ✅ Validation cơ bản
         if (username == null || password == null || username.trim().isEmpty() || password.trim().isEmpty()) {
             req.setAttribute("error", "Vui lòng nhập đầy đủ thông tin đăng nhập!");
             req.getRequestDispatcher("view/auth/login.jsp").forward(req, resp);
             return;
         }
 
-        // kiểm tra trong database
+        // ✅ Kiểm tra trong database
         UserDBContext db = new UserDBContext();
         User u = db.get(username, password);
 
         if (u != null) {
-            // đăng nhập thành công
+            // ✅ Đăng nhập thành công
             HttpSession session = req.getSession();
-            session.setAttribute("user", u); // đổi key thành "user" để HomeController nhận được
+            session.setAttribute("auth", u);
 
-            // chuyển hướng sang trang Home
-            resp.sendRedirect("home");
+            // ✅ Dùng context path để chuyển hướng an toàn (tránh lỗi Access Denied do sai path)
+            resp.sendRedirect(req.getContextPath() + "/home");
         } else {
-            // sai tài khoản hoặc mật khẩu
+            // ❌ Sai tài khoản hoặc mật khẩu
             req.setAttribute("error", "Tên đăng nhập hoặc mật khẩu không đúng!");
             req.getRequestDispatcher("view/auth/login.jsp").forward(req, resp);
         }
@@ -56,6 +56,13 @@ public class LoginController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        req.getRequestDispatcher("view/auth/login.jsp").forward(req, resp);
+
+        // Nếu người dùng đã đăng nhập thì chuyển sang home luôn
+        HttpSession session = req.getSession(false);
+        if (session != null && session.getAttribute("user") != null) {
+            resp.sendRedirect(req.getContextPath() + "/home");
+        } else {
+            req.getRequestDispatcher("view/auth/login.jsp").forward(req, resp);
+        }
     }
 }

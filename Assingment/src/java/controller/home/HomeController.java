@@ -21,8 +21,10 @@ public class HomeController extends BaseRequiredAuthenticationController {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp, User user)
             throws ServletException, IOException {
 
-        // Gửi user sang JSP
+        // Gửi thông tin user sang JSP
         req.setAttribute("user", user);
-        req.getRequestDispatcher("view/home.jsp").forward(req, resp);
+
+        // ✅ Đổi đường dẫn vì bạn để home.jsp trong thư mục auth
+        req.getRequestDispatcher("view/auth/home.jsp").forward(req, resp);
     }
 }
