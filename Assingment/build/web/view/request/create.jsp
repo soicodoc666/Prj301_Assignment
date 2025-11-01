@@ -19,17 +19,56 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
         }
 
         header h2 {
             margin: 0;
         }
 
-        header a {
-            color: white;
+        .account-menu {
+            position: relative;
+            display: inline-block;
+        }
+
+        .account-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #fff;
+            background-image: url('https://cdn-icons-png.flaticon.com/512/847/847969.png');
+            background-size: cover;
+            cursor: pointer;
+        }
+
+        .dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            min-width: 180px;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .dropdown a {
+            display: block;
+            padding: 12px 16px;
+            color: #333;
             text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1px solid #eee;
+        }
+
+        .dropdown a:hover {
+            background-color: #f4f4f4;
+        }
+
+        .dropdown a.logout {
+            color: #e1251b;
             font-weight: bold;
-            margin-left: 20px;
         }
 
         .container {
@@ -101,14 +140,34 @@
             text-decoration: underline;
         }
     </style>
+    <script>
+        // JavaScript toggle cho menu tài khoản
+        function toggleMenu() {
+            const menu = document.getElementById("dropdown");
+            menu.style.display = (menu.style.display === "block") ? "none" : "block";
+        }
+
+        // Ẩn menu khi click ra ngoài
+        window.onclick = function(event) {
+            if (!event.target.matches('.account-icon')) {
+                const menu = document.getElementById("dropdown");
+                if (menu && menu.style.display === "block") {
+                    menu.style.display = "none";
+                }
+            }
+        }
+    </script>
 </head>
 <body>
 <header>
     <h2>Tạo đơn nghỉ phép</h2>
-    <div>
-        <a href="../home">Trang chủ</a>
-        <a href="list">Xem đơn</a>
-        <a href="../logout">Đăng xuất</a>
+    <div class="account-menu">
+        <div class="account-icon" onclick="toggleMenu()"></div>
+        <div class="dropdown" id="dropdown">
+            <a href="../profile.jsp">Thông tin tài khoản</a>
+            <a href="list">Lịch sử tạo đơn</a>
+            <a href="../logout" class="logout">Đăng xuất</a>
+        </div>
     </div>
 </header>
 
