@@ -1,9 +1,10 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Agenda - T�nh h�nh nh�n s?</title>
+    <title>📅 Lịch làm việc - Tình hình nhân sự</title>
     <style>
         body {
             font-family: "Segoe UI", sans-serif;
@@ -14,7 +15,29 @@
         header {
             background-color: #e1251b;
             color: white;
-            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 30px;
+        }
+        header h2 {
+            margin: 0;
+            font-size: 22px;
+        }
+        nav {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 6px 10px;
+            border-radius: 5px;
+        }
+        nav a:hover {
+            background-color: rgba(255,255,255,0.2);
         }
         .container {
             max-width: 1100px;
@@ -44,6 +67,9 @@
             cursor: pointer;
             font-weight: bold;
         }
+        form.filter button:hover {
+            background: #c92018;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -58,18 +84,30 @@
         }
         .working { background-color: #c9f7c0; }
         .leave { background-color: #f7c0c0; }
+        .footer {
+            text-align: center;
+            color: #777;
+            font-size: 13px;
+            margin-top: 25px;
+        }
     </style>
 </head>
 <body>
 <header>
-    <h2>? T�nh h�nh nh�n s? (Agenda)</h2>
+    <h2>📅 Lịch làm việc - Tình hình nhân sự</h2>
+    <nav>
+        <a href="../home.jsp">🏠 Trang chủ</a>
+        <a href="../request/list">🕓 Lịch sử tạo đơn</a>
+        <span>👤 Xin chào, <b>${sessionScope.user.displayname}</b></span>
+        <a href="../logout">🚪 Đăng xuất</a>
+    </nav>
 </header>
 
 <div class="container">
     <form class="filter" action="agenda" method="get">
-        <label>T? ng�y:</label>
+        <label>Từ ngày:</label>
         <input type="date" name="from" value="${from}">
-        <label>??n ng�y:</label>
+        <label>Đến ngày:</label>
         <input type="date" name="to" value="${to}">
         <button type="submit">Xem</button>
     </form>
@@ -77,7 +115,7 @@
     <table>
         <thead>
             <tr>
-                <th>Nh�n vi�n</th>
+                <th>Nhân viên</th>
                 <c:forEach var="d" items="${days}">
                     <th>${d}</th>
                 </c:forEach>
@@ -95,13 +133,17 @@
                             </c:if>
                         </c:forEach>
                         <td class="${isLeave ? 'leave' : 'working'}">
-                            ${isLeave ? 'Ngh?' : 'L�m'}
+                            ${isLeave ? 'Nghỉ' : 'Làm việc'}
                         </td>
                     </c:forEach>
                 </tr>
             </c:forEach>
         </tbody>
     </table>
+</div>
+
+<div class="footer">
+    &copy; 2025 - Quản lý nhân sự | Được phát triển bởi Nhóm IT PRF192
 </div>
 
 </body>
