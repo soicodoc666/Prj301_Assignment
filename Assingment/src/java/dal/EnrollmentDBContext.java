@@ -10,16 +10,18 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import model.Department;
 import model.Employee;
 
 /**
- * Dùng để ánh xạ giữa User và Employee
- * Ví dụ: lấy Employee ID từ User ID (đang đăng nhập)
+ * Dùng để ánh xạ giữa User và Employee Ví dụ: lấy Employee ID từ User ID (đang
+ * đăng nhập)
  */
 public class EnrollmentDBContext extends DBContext<Employee> {
 
     /**
      * Lấy employee id dựa trên user id
+     *
      * @param uid user id đang đăng nhập
      * @return employee id tương ứng, hoặc -1 nếu không có
      */
@@ -90,6 +92,47 @@ public class EnrollmentDBContext extends DBContext<Employee> {
         }
         return list;
     }
+
+    public Employee getByName(String name) {
+    Employee e = null;
+    try {
+        String sql = """
+            SELECT e.eid, e.ename,
+                   d.did, d.dname,
+                   s.eid AS sid, s.ename AS sname
+            FROM Employee e
+            LEFT JOIN Department d ON e.did = d.did
+            LEFT JOIN Employee s ON e.supervisorid = s.eid
+            WHERE e.ename = ?
+        """;
+        PreparedStatement stm = connection.prepareStatement(sql);
+        stm.setString(1, name);
+        ResultSet rs = stm.executeQuery();
+        if (rs.next()) {
+            e = new Employee();
+            e.setId(rs.getInt("eid"));
+            e.setName(rs.getString("ename"));
+
+            // Gán phòng ban
+            Department d = new Department();
+            d.setId(rs.getInt("did"));
+            d.setName(rs.getString("dname"));
+            e.setDept(d);
+
+            // Gán người quản lý
+            Employee s = new Employee();
+            s.setId(rs.getInt("sid"));
+            s.setName(rs.getString("sname"));
+            e.setSupervisor(s);
+        }
+    } catch (SQLException ex) {
+        Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);
+    } finally {
+        closeConnection();
+    }
+    return e;
+}
+
 
     @Override
     public void insert(Employee model) {

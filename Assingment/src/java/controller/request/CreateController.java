@@ -1,6 +1,11 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package controller.request;
 
 import controller.iam.BaseRequiredAuthorizationController;
+import dal.EnrollmentDBContext;
 import dal.RequestForLeaveDBContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -18,7 +23,8 @@ public class CreateController extends BaseRequiredAuthorizationController {
     @Override
     protected void processGet(HttpServletRequest req, HttpServletResponse resp, User user)
             throws ServletException, IOException {
-        // Hiển thị form tạo đơn
+
+        // Hiển thị form nhập
         req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
     }
 
@@ -26,27 +32,46 @@ public class CreateController extends BaseRequiredAuthorizationController {
     protected void processPost(HttpServletRequest req, HttpServletResponse resp, User user)
             throws ServletException, IOException {
 
+        String name = req.getParameter("ename");
+        String fromRaw = req.getParameter("from");
+        String toRaw = req.getParameter("to");
         String reason = req.getParameter("reason");
-        Date from = Date.valueOf(req.getParameter("from"));
-        Date to = Date.valueOf(req.getParameter("to"));
 
-        // Tạo đối tượng Employee từ User hiện tại
-        Employee emp = new Employee();
-        emp.setId(user.getId());
+        EnrollmentDBContext enrollDB = new EnrollmentDBContext();
+        Employee emp = enrollDB.getByName(name);
+
+        // Nếu tên không tồn tại
+        if (emp == null) {
+            req.setAttribute("error", "❌ Nhân viên '" + name + "' không tồn tại trong công ty!");
+            req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
+            return;
+        }
+
+        // Nếu dữ liệu không hợp lệ
+        if (fromRaw == null || toRaw == null || fromRaw.isEmpty() || toRaw.isEmpty() || reason == null || reason.isEmpty()) {
+            req.setAttribute("error", "⚠️ Vui lòng nhập đầy đủ thông tin!");
+            req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
+            return;
+        }
+
+        // Chuyển đổi ngày
+        Date from = Date.valueOf(fromRaw);
+        Date to = Date.valueOf(toRaw);
 
         // Tạo đơn nghỉ phép
-        RequestForLeave rfl = new RequestForLeave();
-        rfl.setReason(reason);
-        rfl.setFrom(from);
-        rfl.setTo(to);
-        rfl.setCreated_by(emp);
-        rfl.setStatus(0); // 0 = đang chờ duyệt
+        RequestForLeave reqLeave = new RequestForLeave();
+        reqLeave.setCreated_by(emp);
+        reqLeave.setFrom(from);
+        reqLeave.setTo(to);
+        reqLeave.setReason(reason);
+        reqLeave.setStatus(0); // 0 = chờ duyệt
 
-        // Lưu vào DB
+        // Ghi vào DB
         RequestForLeaveDBContext db = new RequestForLeaveDBContext();
-        db.insert(rfl);
+        db.insert(reqLeave);
 
-        // Quay lại danh sách đơn
-        resp.sendRedirect("list");
+        // Gửi lại trang với thông báo thành công
+        req.setAttribute("success", "✅ Đơn nghỉ phép của bạn đã được gửi thành công!");
+        req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
     }
 }
