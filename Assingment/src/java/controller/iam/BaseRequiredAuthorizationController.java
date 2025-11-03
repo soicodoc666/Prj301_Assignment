@@ -13,10 +13,7 @@ import model.iam.Feature;
 import model.iam.Role;
 import model.iam.User;
 
-/**
- *
- * @author sonnt
- */
+
 public abstract class BaseRequiredAuthorizationController extends BaseRequiredAuthenticationController {
 
     private boolean isAuthorized(HttpServletRequest req, User user) {

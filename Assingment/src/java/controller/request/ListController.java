@@ -15,10 +15,7 @@ import java.util.ArrayList;
 import model.RequestForLeave;
 import model.iam.User;
 
-/**
- *
- * @author sonnt
- */
+
 @WebServlet(urlPatterns = "/request/list")
 public class ListController extends BaseRequiredAuthorizationController {
 

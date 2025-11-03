@@ -1,8 +1,4 @@
-<%-- 
-    Document   : greeting
-    Created on : Oct 18, 2025, 11:10:55 AM
-    Author     : sonnt
---%>
+
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>

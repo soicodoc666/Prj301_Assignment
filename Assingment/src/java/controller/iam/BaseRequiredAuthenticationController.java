@@ -11,10 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import model.iam.User;
 
-/**
- *
- * @author sonnt
- */
+
 public abstract class BaseRequiredAuthenticationController extends HttpServlet {
     private boolean isAuthenticated(HttpServletRequest req) {
         User u = (User) req.getSession().getAttribute("auth");

@@ -12,10 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import model.iam.User;
 
-/**
- *
- * @author sonnt
- */
+
 @WebServlet(urlPatterns = "/request/review")
 public class ReviewController extends BaseRequiredAuthorizationController {
 

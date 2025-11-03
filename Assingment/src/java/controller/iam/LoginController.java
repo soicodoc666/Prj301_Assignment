@@ -14,10 +14,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import model.iam.User;
 
-/**
- *
- * @author sonnt
- */
+
 @WebServlet(urlPatterns = "/login")
 public class LoginController extends HttpServlet {
 

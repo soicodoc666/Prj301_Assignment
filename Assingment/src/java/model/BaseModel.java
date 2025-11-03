@@ -4,10 +4,7 @@
  */
 package model;
 
-/**
- *
- * @author sonnt
- */
+
 public abstract class BaseModel {
     private int id;
 

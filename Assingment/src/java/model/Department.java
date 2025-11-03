@@ -6,10 +6,7 @@ package model;
 
 import model.BaseModel;
 
-/**
- *
- * @author sonnt
- */
+
 public class Department extends BaseModel {
     
 }

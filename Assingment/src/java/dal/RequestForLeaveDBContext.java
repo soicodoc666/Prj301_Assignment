@@ -7,10 +7,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import model.Employee;
 
-/**
- *
- * @author sonnt
- */
 public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
 
     /**

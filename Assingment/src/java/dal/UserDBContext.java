@@ -11,10 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import model.Employee;
 
-/**
- *
- * @author sonnt
- */
+
 public class UserDBContext extends DBContext<User> {
 
     public User get(String username, String password) {

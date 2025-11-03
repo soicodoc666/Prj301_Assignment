@@ -7,12 +7,6 @@ package model;
 import java.util.Date;
 
 
-
-
-/**
- *
- * @author sonnt
- */
 public class RequestForLeave extends BaseModel {
     private Employee created_by;
     private java.util.Date created_time;

@@ -8,10 +8,7 @@ import java.util.ArrayList;
 import model.BaseModel;
 import model.Employee;
 
-/**
- *
- * @author sonnt
- */
+
 public class User extends BaseModel {
     private String username;
     private String password;

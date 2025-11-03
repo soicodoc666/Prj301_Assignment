@@ -11,10 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import model.iam.Feature;
 
-/**
- *
- * @author sonnt
- */
+
 public class RoleDBContext extends DBContext<Role> {
 
     public ArrayList<Role> getByUserId(int id) {

@@ -7,10 +7,6 @@ package model.iam;
 import java.util.ArrayList;
 import model.BaseModel;
 
-/**
- *
- * @author sonnt
- */
 public class Role extends BaseModel {
     private String name;
     private ArrayList<User> users = new ArrayList<>();

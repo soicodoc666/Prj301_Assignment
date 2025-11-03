@@ -4,10 +4,7 @@
  */
 package model;
 
-/**
- *
- * @author sonnt
- */
+
 public class Employee extends BaseModel {
     private String name;
     private Department dept; 

@@ -12,10 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 
-/**
- *
- * @author sonnt / cải tiến bởi ChatGPT
- */
+
 @WebServlet(urlPatterns = "/logout")
 public class LogoutController extends HttpServlet {
 

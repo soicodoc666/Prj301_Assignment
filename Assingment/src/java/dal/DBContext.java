@@ -10,10 +10,7 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- *
- * @author sonnt
- */
+
 public abstract class DBContext<T extends BaseModel> {
     //open connection
     protected Connection connection = null;
