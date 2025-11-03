@@ -24,7 +24,19 @@ public class CreateController extends BaseRequiredAuthorizationController {
     protected void processGet(HttpServletRequest req, HttpServletResponse resp, User user)
             throws ServletException, IOException {
 
-        // Hiển thị form nhập
+        String name = req.getParameter("ename");
+
+        // Nếu người dùng nhập tên nhân viên -> kiểm tra
+        if (name != null && !name.trim().isEmpty()) {
+            EnrollmentDBContext enrollDB = new EnrollmentDBContext();
+            Employee emp = enrollDB.getByName(name.trim());
+            if (emp != null) {
+                req.setAttribute("foundEmployee", emp);
+            } else {
+                req.setAttribute("error", "❌ Nhân viên '" + name + "' không tồn tại trong công ty!");
+            }
+        }
+
         req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
     }
 
@@ -40,25 +52,24 @@ public class CreateController extends BaseRequiredAuthorizationController {
         EnrollmentDBContext enrollDB = new EnrollmentDBContext();
         Employee emp = enrollDB.getByName(name);
 
-        // Nếu tên không tồn tại
+        // Nếu không tìm thấy nhân viên
         if (emp == null) {
             req.setAttribute("error", "❌ Nhân viên '" + name + "' không tồn tại trong công ty!");
             req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
             return;
         }
 
-        // Nếu dữ liệu không hợp lệ
+        // Kiểm tra dữ liệu nhập
         if (fromRaw == null || toRaw == null || fromRaw.isEmpty() || toRaw.isEmpty() || reason == null || reason.isEmpty()) {
             req.setAttribute("error", "⚠️ Vui lòng nhập đầy đủ thông tin!");
+            req.setAttribute("foundEmployee", emp);
             req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
             return;
         }
 
-        // Chuyển đổi ngày
         Date from = Date.valueOf(fromRaw);
         Date to = Date.valueOf(toRaw);
 
-        // Tạo đơn nghỉ phép
         RequestForLeave reqLeave = new RequestForLeave();
         reqLeave.setCreated_by(emp);
         reqLeave.setFrom(from);
@@ -66,12 +77,11 @@ public class CreateController extends BaseRequiredAuthorizationController {
         reqLeave.setReason(reason);
         reqLeave.setStatus(0); // 0 = chờ duyệt
 
-        // Ghi vào DB
         RequestForLeaveDBContext db = new RequestForLeaveDBContext();
         db.insert(reqLeave);
 
-        // Gửi lại trang với thông báo thành công
         req.setAttribute("success", "✅ Đơn nghỉ phép của bạn đã được gửi thành công!");
+        req.setAttribute("foundEmployee", emp);
         req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
     }
 }

@@ -92,18 +92,17 @@ public class EnrollmentDBContext extends DBContext<Employee> {
         }
         return list;
     }
-
-    public Employee getByName(String name) {
+public Employee getByName(String name) {
     Employee e = null;
     try {
         String sql = """
-            SELECT e.eid, e.ename,
-                   d.did, d.dname,
-                   s.eid AS sid, s.ename AS sname
+            SELECT e.eid, e.ename, d.did, d.dname, r.rid, r.rname
             FROM Employee e
-            LEFT JOIN Department d ON e.did = d.did
-            LEFT JOIN Employee s ON e.supervisorid = s.eid
-            WHERE e.ename = ?
+            JOIN Division d ON e.did = d.did
+            JOIN Enrollment en ON e.eid = en.eid
+            JOIN UserRole ur ON en.uid = ur.uid
+            JOIN Role r ON ur.rid = r.rid
+            WHERE LOWER(LTRIM(RTRIM(e.ename))) = LOWER(LTRIM(RTRIM(?)))
         """;
         PreparedStatement stm = connection.prepareStatement(sql);
         stm.setString(1, name);
@@ -113,17 +112,14 @@ public class EnrollmentDBContext extends DBContext<Employee> {
             e.setId(rs.getInt("eid"));
             e.setName(rs.getString("ename"));
 
-            // Gán phòng ban
-            Department d = new Department();
-            d.setId(rs.getInt("did"));
-            d.setName(rs.getString("dname"));
-            e.setDept(d);
+            // Gắn phòng ban
+            Department dept = new Department();
+            dept.setId(rs.getInt("did"));
+            dept.setName(rs.getString("dname"));
+            e.setDept(dept);
 
-            // Gán người quản lý
-            Employee s = new Employee();
-            s.setId(rs.getInt("sid"));
-            s.setName(rs.getString("sname"));
-            e.setSupervisor(s);
+            // Gắn vai trò
+            e.setRole(rs.getString("rname"));
         }
     } catch (SQLException ex) {
         Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);

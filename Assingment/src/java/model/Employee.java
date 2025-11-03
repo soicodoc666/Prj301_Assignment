@@ -4,11 +4,12 @@
  */
 package model;
 
-
 public class Employee extends BaseModel {
+
     private String name;
-    private Department dept; 
+    private Department dept;
     private Employee supervisor;
+    private String role;
 
     public String getName() {
         return name;
@@ -33,5 +34,14 @@ public class Employee extends BaseModel {
     public void setSupervisor(Employee supervisor) {
         this.supervisor = supervisor;
     }
-    
+
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
 }
