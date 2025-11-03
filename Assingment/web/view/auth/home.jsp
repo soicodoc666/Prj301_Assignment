@@ -13,7 +13,6 @@
             padding: 0;
         }
 
-        /* Header mới với avatar và dropdown */
         header {
             background-color: #e1251b;
             color: white;
@@ -45,7 +44,6 @@
             border: 2px solid white;
         }
 
-        /* Dropdown menu */
         .dropdown {
             display: none;
             position: absolute;
@@ -123,6 +121,55 @@
             margin-bottom: 10px;
         }
 
+        .search-box {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            margin-top: 50px;
+            padding: 25px;
+            text-align: left;
+        }
+
+        input[type="text"] {
+            width: 80%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        button {
+            background-color: #e1251b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #c51d15;
+        }
+
+        .info-box {
+            margin-top: 20px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-left: 4px solid #e1251b;
+            border-radius: 8px;
+            text-align: left;
+            line-height: 1.8;
+        }
+
+        .error {
+            color: red;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
         footer {
             text-align: center;
             margin-top: 50px;
@@ -160,15 +207,31 @@
                 Xem đơn đã tạo
             </a>
 
-            <a href="iam/history" class="menu-item">
-                <i class="fa-solid fa-clock-rotate-left"></i>
-                Lịch sử đăng nhập
-            </a>
-
             <a href="division/agenda" class="menu-item">
                 <i class="fa-solid fa-calendar-days"></i>
                 Agenda (Lịch làm việc)
             </a>
+        </div>
+
+        <!-- 🔍 KHU VỰC TÌM KIẾM NHÂN SỰ -->
+        <div class="search-box">
+            <h3>🔍 Tìm kiếm nhân sự</h3>
+            <form action="home" method="get">
+                <input type="text" name="ename" placeholder="Nhập tên nhân viên..." value="${param.ename}">
+                <button type="submit">Tìm kiếm</button>
+            </form>
+
+            <c:if test="${not empty error}">
+                <div class="error">${error}</div>
+            </c:if>
+
+            <c:if test="${not empty foundEmployee}">
+                <div class="info-box">
+                    👤 <b>Tên:</b> ${foundEmployee.name}<br>
+                    🏢 <b>Phòng ban:</b> ${foundEmployee.dept.name}<br>
+                    🏷 <b>Vai trò:</b> ${foundEmployee.role}
+                </div>
+            </c:if>
         </div>
     </div>
 
@@ -182,7 +245,6 @@
             menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
         }
 
-        // Đóng menu khi click ra ngoài
         window.onclick = function(e) {
             const menu = document.getElementById('dropdownMenu');
             if (!e.target.closest('.user-menu')) {
