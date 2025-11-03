@@ -1,13 +1,14 @@
-<%@ page contentType="text/html;charset=UTF-8" %>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Tạo yêu cầu nghỉ phép</title>
+    <title>📝 Đơn xin nghỉ phép</title>
     <style>
         body {
-            font-family: "Segoe UI", Arial, sans-serif;
-            background-color: #f4f6f8;
+            font-family: "Segoe UI", sans-serif;
+            background-color: #f5f6f8;
             margin: 0;
             padding: 0;
         }
@@ -15,7 +16,7 @@
         header {
             background-color: #e1251b;
             color: white;
-            padding: 15px 30px;
+            padding: 15px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -24,33 +25,35 @@
 
         header h2 {
             margin: 0;
+            font-size: 22px;
         }
 
-        .account-menu {
+        .user-menu {
             position: relative;
-            display: inline-block;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .account-icon {
-            width: 40px;
-            height: 40px;
+        .avatar-small {
+            width: 45px;
+            height: 45px;
             border-radius: 50%;
-            background-color: #fff;
-            background-image: url('https://cdn-icons-png.flaticon.com/512/847/847969.png');
-            background-size: cover;
-            cursor: pointer;
+            background: url('https://i.ibb.co/4pDNDk1/avatar.png') center/cover;
+            border: 2px solid white;
         }
 
         .dropdown {
             display: none;
             position: absolute;
+            top: 65px;
             right: 0;
             background-color: #fff;
             border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            min-width: 180px;
-            z-index: 100;
-            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            min-width: 200px;
+            z-index: 10;
         }
 
         .dropdown a {
@@ -58,115 +61,112 @@
             padding: 12px 16px;
             color: #333;
             text-decoration: none;
-            font-weight: 500;
             border-bottom: 1px solid #eee;
         }
 
         .dropdown a:hover {
-            background-color: #f4f4f4;
+            background-color: #f9f9f9;
         }
 
-        .dropdown a.logout {
+        .dropdown a:last-child {
+            border-bottom: none;
             color: #e1251b;
             font-weight: bold;
         }
 
         .container {
-            max-width: 600px;
+            max-width: 550px;
             margin: 60px auto;
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            padding: 30px 40px;
+            border-radius: 12px;
+            padding: 35px 40px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         h3 {
             text-align: center;
-            color: #333;
-            margin-bottom: 30px;
+            color: #e1251b;
+            margin-bottom: 25px;
+            font-size: 22px;
         }
 
-        form {
-            display: flex;
-            flex-direction: column;
+        .user-info {
+            margin-bottom: 25px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 15px;
+            color: #444;
+            border-left: 4px solid #e1251b;
         }
 
         label {
-            font-weight: bold;
-            margin-bottom: 6px;
-            color: #444;
+            display: block;
+            margin-top: 12px;
+            font-weight: 600;
+            color: #333;
         }
 
         input[type="date"],
         textarea {
+            width: 100%;
             padding: 10px;
+            margin-top: 6px;
             border: 1px solid #ccc;
             border-radius: 6px;
-            margin-bottom: 20px;
             font-size: 14px;
-            width: 100%;
         }
 
         textarea {
             resize: none;
-            height: 100px;
+            height: 80px;
         }
 
         button {
+            margin-top: 25px;
+            width: 100%;
             background-color: #e1251b;
             color: white;
-            padding: 12px;
-            font-size: 16px;
             border: none;
+            padding: 12px;
             border-radius: 6px;
+            font-size: 16px;
             cursor: pointer;
             font-weight: bold;
-            transition: 0.2s;
         }
 
         button:hover {
-            opacity: 0.9;
+            background-color: #c92018;
         }
 
-        .back {
+        .back-home {
             display: inline-block;
             margin-top: 20px;
             text-decoration: none;
             color: #e1251b;
             font-weight: bold;
+            text-align: center;
+            width: 100%;
         }
 
-        .back:hover {
-            text-decoration: underline;
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #777;
+            font-size: 13px;
         }
     </style>
-    <script>
-        // JavaScript toggle cho menu tài khoản
-        function toggleMenu() {
-            const menu = document.getElementById("dropdown");
-            menu.style.display = (menu.style.display === "block") ? "none" : "block";
-        }
-
-        // Ẩn menu khi click ra ngoài
-        window.onclick = function(event) {
-            if (!event.target.matches('.account-icon')) {
-                const menu = document.getElementById("dropdown");
-                if (menu && menu.style.display === "block") {
-                    menu.style.display = "none";
-                }
-            }
-        }
-    </script>
 </head>
 <body>
 <header>
-    <h2>Tạo đơn nghỉ phép</h2>
-    <div class="account-menu">
-        <div class="account-icon" onclick="toggleMenu()"></div>
-        <div class="dropdown" id="dropdown">
-            <a href="../profile.jsp">Thông tin tài khoản</a>
-            <a href="list">Lịch sử tạo đơn</a>
-            <a href="../logout" class="logout">Đăng xuất</a>
+    <h2>📝 Đơn xin nghỉ phép</h2>
+    <div class="user-menu" onclick="toggleMenu()">
+        <span>Xin chào, <c:out value="${sessionScope.user.displayname}" /></span>
+        <div class="avatar-small"></div>
+        <div class="dropdown" id="dropdownMenu">
+            <a href="../profile">Thông tin tài khoản</a>
+            <a href="../request/history">Lịch sử tạo đơn</a>
+            <a href="../logout">Đăng xuất</a>
         </div>
     </div>
 </header>
@@ -174,21 +174,44 @@
 <div class="container">
     <h3>Nhập thông tin đơn nghỉ phép</h3>
 
+    <div class="user-info">
+        👤 <b>Người dùng:</b> <c:out value="${sessionScope.user.displayname}" /> <br>
+        🏷 <b>Vai trò:</b> Nhân viên <br>
+        🏢 <b>Phòng ban:</b> Phòng IT
+    </div>
+
     <form action="create" method="post">
         <label for="reason">Lý do nghỉ:</label>
-        <textarea id="reason" name="reason" placeholder="Nhập lý do nghỉ phép..." required></textarea>
+        <textarea name="reason" id="reason" placeholder="Nhập lý do nghỉ phép..." required></textarea>
 
         <label for="from">Từ ngày:</label>
-        <input type="date" id="from" name="from" required>
+        <input type="date" name="from" id="from" required>
 
         <label for="to">Đến ngày:</label>
-        <input type="date" id="to" name="to" required>
+        <input type="date" name="to" id="to" required>
 
         <button type="submit">Gửi yêu cầu</button>
     </form>
 
-    <a href="list" class="back">← Quay lại danh sách yêu cầu</a>
+    <a href="../home.jsp" class="back-home">🏠 Quay về Trang chủ</a>
 </div>
 
+<footer>
+    © 2025 - Hệ thống Quản lý Nghỉ phép | FPT University
+</footer>
+
+<script>
+    function toggleMenu() {
+        const menu = document.getElementById('dropdownMenu');
+        menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+    }
+
+    window.onclick = function(e) {
+        const menu = document.getElementById('dropdownMenu');
+        if (!e.target.closest('.user-menu')) {
+            menu.style.display = 'none';
+        }
+    }
+</script>
 </body>
 </html>
