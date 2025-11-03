@@ -13,6 +13,7 @@
             padding: 0;
         }
 
+        /* Header mới với avatar và dropdown */
         header {
             background-color: #e1251b;
             color: white;
@@ -20,6 +21,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
         }
 
         header h2 {
@@ -27,27 +29,51 @@
             font-size: 22px;
         }
 
-        .user-info {
+        .user-menu {
+            position: relative;
+            cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
         }
 
-        .user-info span {
-            font-weight: bold;
+        .avatar-small {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: url('https://i.ibb.co/4pDNDk1/avatar.png') center/cover;
+            border: 2px solid white;
         }
 
-        .user-info a {
-            color: white;
+        /* Dropdown menu */
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: 65px;
+            right: 0;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            min-width: 200px;
+            z-index: 10;
+        }
+
+        .dropdown a {
+            display: block;
+            padding: 12px 16px;
+            color: #333;
             text-decoration: none;
-            background-color: rgba(255, 255, 255, 0.2);
-            padding: 6px 14px;
-            border-radius: 6px;
-            transition: 0.2s;
+            border-bottom: 1px solid #eee;
         }
 
-        .user-info a:hover {
-            background-color: rgba(255, 255, 255, 0.35);
+        .dropdown a:hover {
+            background-color: #f9f9f9;
+        }
+
+        .dropdown a:last-child {
+            border-bottom: none;
+            color: #e1251b;
+            font-weight: bold;
         }
 
         .container {
@@ -109,9 +135,14 @@
 <body>
     <header>
         <h2>🏢 Hệ thống Quản lý Nghỉ phép</h2>
-        <div class="user-info">
+        <div class="user-menu" onclick="toggleMenu()">
             <span>Xin chào, <c:out value="${sessionScope.user.displayname}" /></span>
-            <a href="logout"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a>
+            <div class="avatar-small"></div>
+            <div class="dropdown" id="dropdownMenu">
+                <a href="profile">Thông tin tài khoản</a>
+                <a href="request/history">Lịch sử tạo đơn</a>
+                <a href="logout">Đăng xuất</a>
+            </div>
         </div>
     </header>
 
@@ -144,5 +175,20 @@
     <footer>
         © 2025 - Hệ thống Quản lý Nghỉ phép | FPT University
     </footer>
+
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('dropdownMenu');
+            menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+        }
+
+        // Đóng menu khi click ra ngoài
+        window.onclick = function(e) {
+            const menu = document.getElementById('dropdownMenu');
+            if (!e.target.closest('.user-menu')) {
+                menu.style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>
