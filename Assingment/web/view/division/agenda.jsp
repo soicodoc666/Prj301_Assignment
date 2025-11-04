@@ -163,7 +163,6 @@
         <div class="avatar-small"></div>
         <div class="dropdown" id="dropdownMenu">
             <a href="../profile">Thông tin tài khoản</a>
-            <a href="../request/history">Lịch sử tạo đơn</a>
             <a href="../logout">Đăng xuất</a>
         </div>
     </div>

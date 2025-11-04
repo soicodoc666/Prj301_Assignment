@@ -20,68 +20,66 @@ import model.iam.User;
 @WebServlet(urlPatterns = "/request/create")
 public class CreateController extends BaseRequiredAuthorizationController {
 
-    @Override
-    protected void processGet(HttpServletRequest req, HttpServletResponse resp, User user)
-            throws ServletException, IOException {
+@Override
+protected void processGet(HttpServletRequest req, HttpServletResponse resp, User user)
+        throws ServletException, IOException {
 
-        String name = req.getParameter("ename");
+    EnrollmentDBContext enrollDB = new EnrollmentDBContext();
+    int eid = enrollDB.getEmployeeIdByUserId(user.getId());
 
-        // Nếu người dùng nhập tên nhân viên -> kiểm tra
-        if (name != null && !name.trim().isEmpty()) {
-            EnrollmentDBContext enrollDB = new EnrollmentDBContext();
-            Employee emp = enrollDB.getByName(name.trim());
-            if (emp != null) {
-                req.setAttribute("foundEmployee", emp);
-            } else {
-                req.setAttribute("error", "❌ Nhân viên '" + name + "' không tồn tại trong công ty!");
-            }
-        }
-
-        req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
+    if (eid == -1) {
+        req.setAttribute("error", "❌ Không tìm thấy thông tin nhân viên cho tài khoản hiện tại!");
+    } else {
+        Employee emp = enrollDB.get(eid);
+        req.setAttribute("foundEmployee", emp);
     }
 
-    @Override
-    protected void processPost(HttpServletRequest req, HttpServletResponse resp, User user)
-            throws ServletException, IOException {
+    req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
+}
 
-        String name = req.getParameter("ename");
-        String fromRaw = req.getParameter("from");
-        String toRaw = req.getParameter("to");
-        String reason = req.getParameter("reason");
+@Override
+protected void processPost(HttpServletRequest req, HttpServletResponse resp, User user)
+        throws ServletException, IOException {
 
-        EnrollmentDBContext enrollDB = new EnrollmentDBContext();
-        Employee emp = enrollDB.getByName(name);
+    String fromRaw = req.getParameter("from");
+    String toRaw = req.getParameter("to");
+    String reason = req.getParameter("reason");
 
-        // Nếu không tìm thấy nhân viên
-        if (emp == null) {
-            req.setAttribute("error", "❌ Nhân viên '" + name + "' không tồn tại trong công ty!");
-            req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
-            return;
-        }
+    EnrollmentDBContext enrollDB = new EnrollmentDBContext();
+    int eid = enrollDB.getEmployeeIdByUserId(user.getId());
+    Employee emp = enrollDB.get(eid);
 
-        // Kiểm tra dữ liệu nhập
-        if (fromRaw == null || toRaw == null || fromRaw.isEmpty() || toRaw.isEmpty() || reason == null || reason.isEmpty()) {
-            req.setAttribute("error", "⚠️ Vui lòng nhập đầy đủ thông tin!");
-            req.setAttribute("foundEmployee", emp);
-            req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
-            return;
-        }
+    // ❌ Nếu không có employee
+    if (emp == null) {
+        req.setAttribute("error", "❌ Không tìm thấy thông tin nhân viên cho tài khoản hiện tại!");
+        req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
+        return;
+    }
 
-        Date from = Date.valueOf(fromRaw);
-        Date to = Date.valueOf(toRaw);
-
-        RequestForLeave reqLeave = new RequestForLeave();
-        reqLeave.setCreated_by(emp);
-        reqLeave.setFrom(from);
-        reqLeave.setTo(to);
-        reqLeave.setReason(reason);
-        reqLeave.setStatus(0); // 0 = chờ duyệt
-
-        RequestForLeaveDBContext db = new RequestForLeaveDBContext();
-        db.insert(reqLeave);
-
-        req.setAttribute("success", "✅ Đơn nghỉ phép của bạn đã được gửi thành công!");
+    // ⚠️ Kiểm tra nhập thiếu
+    if (fromRaw == null || toRaw == null || fromRaw.isEmpty() || toRaw.isEmpty() || reason == null || reason.isEmpty()) {
+        req.setAttribute("error", "⚠️ Vui lòng nhập đầy đủ thông tin!");
         req.setAttribute("foundEmployee", emp);
         req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
+        return;
     }
+
+    Date from = Date.valueOf(fromRaw);
+    Date to = Date.valueOf(toRaw);
+
+    RequestForLeave reqLeave = new RequestForLeave();
+    reqLeave.setCreated_by(emp);
+    reqLeave.setFrom(from);
+    reqLeave.setTo(to);
+    reqLeave.setReason(reason);
+    reqLeave.setStatus(0); // 0 = chờ duyệt
+
+    RequestForLeaveDBContext db = new RequestForLeaveDBContext();
+    db.insert(reqLeave);
+
+    req.setAttribute("success", "✅ Đơn nghỉ phép của bạn đã được gửi thành công!");
+    req.setAttribute("foundEmployee", emp);
+    req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
+}
+
 }

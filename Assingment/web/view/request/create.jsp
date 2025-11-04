@@ -1,10 +1,10 @@
-<%@page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Đơn xin nghỉ phép</title>
+    <title>Tạo đơn xin nghỉ phép</title>
     <style>
         body {
             font-family: "Segoe UI", sans-serif;
@@ -28,9 +28,16 @@
             border-radius: 12px;
             box-shadow: 0 5px 10px rgba(0,0,0,0.1);
         }
-        h2 { text-align: center; color: #333; }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
         input, textarea {
-            width: 100%;
             padding: 10px;
             border-radius: 6px;
             border: 1px solid #ccc;
@@ -46,16 +53,23 @@
             font-size: 16px;
             font-weight: bold;
         }
-        button:hover { background-color: #c51d15; }
-        .msg { text-align: center; margin-bottom: 10px; font-weight: bold; }
+        button:hover {
+            background-color: #c51d15;
+        }
+        .msg {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
         .error { color: red; }
         .success { color: green; }
         .info-box {
-            background-color: #f0f0f0;
+            background: #f9f9f9;
+            padding: 15px;
             border-left: 4px solid #e1251b;
-            padding: 10px 15px;
-            margin-bottom: 15px;
-            border-radius: 6px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            line-height: 1.8;
         }
     </style>
 </head>
@@ -75,25 +89,17 @@
         </c:if>
     </div>
 
-    <!-- Form nhập tên nhân viên để hiển thị thông tin -->
-    <form method="get" action="create" style="margin-bottom:20px;">
-        <label>👤 Nhập tên nhân viên:</label>
-        <input type="text" name="ename"  value="${param.ename}" required>
-        <button type="submit">Kiểm tra</button>
-    </form>
-
-    <!-- Hiển thị thông tin nhân viên -->
+    <!-- ✅ Hiển thị thông tin người dùng -->
     <c:if test="${not empty foundEmployee}">
         <div class="info-box">
             👤 <b>Tên:</b> ${foundEmployee.name} <br>
             🏢 <b>Phòng ban:</b> ${foundEmployee.dept.name} <br>
-            🏷 <b>Vai trò:</b> ${foundEmployee.role}
+            🏷 <b>Vai trò:</b> 
+            <c:out value="${foundEmployee.role != null ? foundEmployee.role : 'Nhân viên'}" />
         </div>
     </c:if>
 
-    <!-- Form tạo đơn -->
     <form action="create" method="post">
-        <input type="hidden" name="ename" value="${foundEmployee.name}">
         <label>📅 Từ ngày:</label>
         <input type="date" name="from" required>
 

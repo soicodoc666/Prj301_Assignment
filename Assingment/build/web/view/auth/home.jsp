@@ -187,7 +187,6 @@
             <div class="avatar-small"></div>
             <div class="dropdown" id="dropdownMenu">
                 <a href="profile">Thông tin tài khoản</a>
-                <a href="request/history">Lịch sử tạo đơn</a>
                 <a href="logout">Đăng xuất</a>
             </div>
         </div>
@@ -225,11 +224,15 @@
                 <div class="error">${error}</div>
             </c:if>
 
-            <c:if test="${not empty foundEmployee}">
+            <c:if test="${not empty foundEmployees}">
                 <div class="info-box">
-                    👤 <b>Tên:</b> ${foundEmployee.name}<br>
-                    🏢 <b>Phòng ban:</b> ${foundEmployee.dept.name}<br>
-                    🏷 <b>Vai trò:</b> ${foundEmployee.role}
+                    <h4>Kết quả tìm thấy:</h4>
+                    <c:forEach var="emp" items="${foundEmployees}">
+                        👤 <b>Tên:</b> ${emp.name}<br>
+                        🏢 <b>Phòng ban:</b> ${emp.dept.name}<br>
+                        🏷 <b>Vai trò:</b> <c:out value="${emp.role != null ? emp.role : 'Nhân viên'}"/><br>
+                        <hr>
+                    </c:forEach>
                 </div>
             </c:if>
         </div>
