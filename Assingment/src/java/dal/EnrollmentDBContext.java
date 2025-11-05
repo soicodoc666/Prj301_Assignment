@@ -114,46 +114,41 @@ public class EnrollmentDBContext extends DBContext<Employee> {
         }
         return list;
     }
+public ArrayList<Employee> searchByName(String name) {
+    ArrayList<Employee> list = new ArrayList<>();
+    String sql = """
+        SELECT e.eid, e.ename, d.did, d.dname, r.rname
+        FROM Employee e
+        JOIN Division d ON e.did = d.did
+        JOIN Enrollment en ON e.eid = en.eid
+        JOIN UserRole ur ON en.uid = ur.uid
+        JOIN Role r ON ur.rid = r.rid
+        WHERE LOWER(e.ename) LIKE LOWER(?)
+    """;
+    try (PreparedStatement stm = connection.prepareStatement(sql)) {
+        stm.setString(1, "%" + name.trim() + "%");
+        ResultSet rs = stm.executeQuery();
+        while (rs.next()) {
+            Employee e = new Employee();
+            e.setId(rs.getInt("eid"));
+            e.setName(rs.getString("ename"));
 
-    public Employee getByName(String name) {
-        Employee e = null;
-        String sql = """
-            SELECT e.eid, e.ename, e.supervisorid, d.did, d.dname, r.rname
-            FROM Employee e
-            JOIN Division d ON e.did = d.did
-            JOIN Enrollment en ON e.eid = en.eid
-            JOIN UserRole ur ON en.uid = ur.uid
-            JOIN Role r ON ur.rid = r.rid
-            WHERE LOWER(LTRIM(RTRIM(e.ename))) = LOWER(LTRIM(RTRIM(?)))
-        """;
-        try (PreparedStatement stm = connection.prepareStatement(sql)) {
-            stm.setString(1, name);
-            ResultSet rs = stm.executeQuery();
-            if (rs.next()) {
-                e = new Employee();
-                e.setId(rs.getInt("eid"));
-                e.setName(rs.getString("ename"));
-                e.setRole(rs.getString("rname"));
+            Department dept = new Department();
+            dept.setId(rs.getInt("did"));
+            dept.setName(rs.getString("dname"));
+            e.setDept(dept);
 
-                Department dept = new Department();
-                dept.setId(rs.getInt("did"));
-                dept.setName(rs.getString("dname"));
-                e.setDept(dept);
-
-                // ✅ Thêm supervisor
-                int supervisorId = rs.getInt("supervisorid");
-                if (supervisorId != 0) {
-                    Employee supervisor = getSupervisorByEmployeeId(supervisorId);
-                    e.setSupervisor(supervisor);
-                }
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            closeConnection();
+            e.setRole(rs.getString("rname"));
+            list.add(e);
         }
-        return e;
+    } catch (SQLException ex) {
+        Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);
+    } finally {
+        closeConnection();
     }
+    return list;
+}
+
 
     @Override
     public void insert(Employee model) {

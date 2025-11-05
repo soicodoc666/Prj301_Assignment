@@ -7,6 +7,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
 import model.Employee;
 import model.iam.User;
 
@@ -30,12 +31,12 @@ public class HomeController extends BaseRequiredAuthenticationController {
         String ename = req.getParameter("ename");
         if (ename != null && !ename.trim().isEmpty()) {
             EnrollmentDBContext enrollDB = new EnrollmentDBContext();
-            Employee emp = enrollDB.getByName(ename.trim());
+            ArrayList<Employee> list = enrollDB.searchByName(ename.trim());
 
-            if (emp != null) {
-                req.setAttribute("foundEmployee", emp);
+            if (!list.isEmpty()) {
+                req.setAttribute("foundEmployees", list);
             } else {
-                req.setAttribute("error", "❌ Không tìm thấy nhân viên '" + ename + "' trong công ty!");
+                req.setAttribute("error", "❌ Không tìm thấy nhân viên nào có tên chứa '" + ename + "'");
             }
         }
 
