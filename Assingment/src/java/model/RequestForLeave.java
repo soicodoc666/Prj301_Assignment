@@ -15,6 +15,7 @@ public class RequestForLeave extends BaseModel {
     private String reason;
     private int status;
     private Employee processed_by;
+       private String title;
     
     public Employee getCreated_by() {
         return created_by;
@@ -71,5 +72,14 @@ public class RequestForLeave extends BaseModel {
     public void setProcessed_by(Employee processed_by) {
         this.processed_by = processed_by;
     }
-    
+
+
+public String getTitle() {
+    return title;
+}
+
+public void setTitle(String title) {
+    this.title = title;
+}
+
 }

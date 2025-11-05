@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package controller.request;
 
 import controller.iam.BaseRequiredAuthorizationController;
@@ -26,14 +22,9 @@ public class CreateController extends BaseRequiredAuthorizationController {
 
         EnrollmentDBContext enrollDB = new EnrollmentDBContext();
         int eid = enrollDB.getEmployeeIdByUserId(user.getId());
+        Employee emp = enrollDB.get(eid);
 
-        if (eid == -1) {
-            req.setAttribute("error", "❌ Không tìm thấy thông tin nhân viên cho tài khoản hiện tại!");
-        } else {
-            Employee emp = enrollDB.get(eid);
-            req.setAttribute("foundEmployee", emp);
-        }
-
+        req.setAttribute("employee", emp);
         req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
     }
 
@@ -41,53 +32,46 @@ public class CreateController extends BaseRequiredAuthorizationController {
     protected void processPost(HttpServletRequest req, HttpServletResponse resp, User user)
             throws ServletException, IOException {
 
+        String title = req.getParameter("title");
         String fromRaw = req.getParameter("from");
         String toRaw = req.getParameter("to");
         String reason = req.getParameter("reason");
 
+        // ✅ Lấy Employee đang đăng nhập
         EnrollmentDBContext enrollDB = new EnrollmentDBContext();
         int eid = enrollDB.getEmployeeIdByUserId(user.getId());
         Employee emp = enrollDB.get(eid);
 
-        // Kiểm tra null
         if (emp == null) {
-            req.setAttribute("error", "Không tìm thấy thông tin nhân viên.");
+            req.setAttribute("error", "Không thể xác định thông tin nhân viên!");
             req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
             return;
         }
 
-        if (fromRaw == null || toRaw == null || reason == null
-                || fromRaw.isEmpty() || toRaw.isEmpty() || reason.isEmpty()) {
+        // Kiểm tra dữ liệu
+        if (title == null || title.trim().isEmpty()
+                || fromRaw == null || toRaw == null
+                || reason == null || reason.trim().isEmpty()) {
             req.setAttribute("error", "⚠️ Vui lòng nhập đầy đủ thông tin!");
             req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
             return;
         }
 
-        Date from = Date.valueOf(fromRaw);
-        Date to = Date.valueOf(toRaw);
+        java.sql.Date from = java.sql.Date.valueOf(fromRaw);
+        java.sql.Date to = java.sql.Date.valueOf(toRaw);
 
         RequestForLeave reqLeave = new RequestForLeave();
+        reqLeave.setTitle(title);
         reqLeave.setCreated_by(emp);
         reqLeave.setFrom(from);
         reqLeave.setTo(to);
         reqLeave.setReason(reason);
-
-        // 👉 Nếu nhân viên KHÔNG có supervisorid → tự duyệt
-        if (emp.getSupervisor() == null) {
-            reqLeave.setStatus(1); // ✅ Tự động duyệt
-        } else {
-            reqLeave.setStatus(0); // ⚙️ Chờ duyệt
-        }
+        reqLeave.setStatus(0); // Chờ duyệt
 
         RequestForLeaveDBContext db = new RequestForLeaveDBContext();
         db.insert(reqLeave);
 
-        // Gửi thông báo cho HR nếu muốn
-        if (emp.getSupervisor() == null) {
-            req.setAttribute("autoApproved", true);
-        }
-
-        req.setAttribute("success", "✅ Đơn nghỉ phép đã được gửi thành công!");
+        req.setAttribute("success", "✅ Đơn nghỉ phép '" + title + "' đã được gửi thành công!");
         req.getRequestDispatcher("../view/request/create.jsp").forward(req, resp);
     }
 
