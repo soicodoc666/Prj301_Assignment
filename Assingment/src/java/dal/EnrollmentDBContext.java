@@ -26,18 +26,18 @@ public class EnrollmentDBContext extends DBContext<Employee> {
         } catch (SQLException ex) {
             Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);
         }
-        // ❌ KHÔNG closeConnection() ở đây — để các hàm khác còn dùng
         return eid;
     }
 
     /**
-     * Lấy thông tin đầy đủ của Employee (tên, phòng ban, vai trò)
+     * Lấy thông tin đầy đủ của Employee (tên, phòng ban, vai trò, supervisor)
      */
     @Override
     public Employee get(int id) {
         Employee e = null;
         String sql = """
-            SELECT e.eid, e.ename, d.did, d.dname, r.rname
+            SELECT e.eid, e.ename, e.supervisorid,
+                   d.did, d.dname, r.rname
             FROM Employee e
             JOIN Division d ON e.did = d.did
             JOIN Enrollment en ON e.eid = en.eid
@@ -53,20 +53,46 @@ public class EnrollmentDBContext extends DBContext<Employee> {
                 e = new Employee();
                 e.setId(rs.getInt("eid"));
                 e.setName(rs.getString("ename"));
+                e.setRole(rs.getString("rname"));
 
                 Department dept = new Department();
                 dept.setId(rs.getInt("did"));
                 dept.setName(rs.getString("dname"));
                 e.setDept(dept);
 
-                e.setRole(rs.getString("rname"));
+                // ✅ Gắn supervisor nếu có
+                int supervisorId = rs.getInt("supervisorid");
+                if (supervisorId != 0) {
+                    Employee supervisor = getSupervisorByEmployeeId(supervisorId);
+                    e.setSupervisor(supervisor);
+                }
             }
         } catch (SQLException ex) {
             Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
-            closeConnection(); // ✅ chỉ đóng 1 lần tại đây
+            closeConnection();
         }
         return e;
+    }
+
+    /**
+     * Lấy supervisor của một nhân viên
+     */
+    public Employee getSupervisorByEmployeeId(int supervisorId) {
+        Employee supervisor = null;
+        String sql = "SELECT eid, ename FROM Employee WHERE eid = ?";
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
+            stm.setInt(1, supervisorId);
+            ResultSet rs = stm.executeQuery();
+            if (rs.next()) {
+                supervisor = new Employee();
+                supervisor.setId(rs.getInt("eid"));
+                supervisor.setName(rs.getString("ename"));
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return supervisor;
     }
 
     @Override
@@ -92,7 +118,7 @@ public class EnrollmentDBContext extends DBContext<Employee> {
     public Employee getByName(String name) {
         Employee e = null;
         String sql = """
-            SELECT e.eid, e.ename, d.did, d.dname, r.rname
+            SELECT e.eid, e.ename, e.supervisorid, d.did, d.dname, r.rname
             FROM Employee e
             JOIN Division d ON e.did = d.did
             JOIN Enrollment en ON e.eid = en.eid
@@ -107,13 +133,19 @@ public class EnrollmentDBContext extends DBContext<Employee> {
                 e = new Employee();
                 e.setId(rs.getInt("eid"));
                 e.setName(rs.getString("ename"));
+                e.setRole(rs.getString("rname"));
 
                 Department dept = new Department();
                 dept.setId(rs.getInt("did"));
                 dept.setName(rs.getString("dname"));
                 e.setDept(dept);
 
-                e.setRole(rs.getString("rname"));
+                // ✅ Thêm supervisor
+                int supervisorId = rs.getInt("supervisorid");
+                if (supervisorId != 0) {
+                    Employee supervisor = getSupervisorByEmployeeId(supervisorId);
+                    e.setSupervisor(supervisor);
+                }
             }
         } catch (SQLException ex) {
             Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);
