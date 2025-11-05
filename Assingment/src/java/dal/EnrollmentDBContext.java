@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package dal;
 
 import java.sql.PreparedStatement;
@@ -13,23 +9,15 @@ import java.util.logging.Logger;
 import model.Department;
 import model.Employee;
 
-/**
- * Dùng để ánh xạ giữa User và Employee Ví dụ: lấy Employee ID từ User ID (đang
- * đăng nhập)
- */
 public class EnrollmentDBContext extends DBContext<Employee> {
 
     /**
-     * Lấy employee id dựa trên user id
-     *
-     * @param uid user id đang đăng nhập
-     * @return employee id tương ứng, hoặc -1 nếu không có
+     * Lấy employee id dựa trên user id (dành cho user đang đăng nhập)
      */
     public int getEmployeeIdByUserId(int uid) {
         int eid = -1;
-        try {
-            String sql = "SELECT eid FROM Enrollment WHERE uid = ? AND active = 1";
-            PreparedStatement stm = connection.prepareStatement(sql);
+        String sql = "SELECT eid FROM Enrollment WHERE uid = ? AND active = 1";
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
             stm.setInt(1, uid);
             ResultSet rs = stm.executeQuery();
             if (rs.next()) {
@@ -37,37 +25,46 @@ public class EnrollmentDBContext extends DBContext<Employee> {
             }
         } catch (SQLException ex) {
             Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            closeConnection();
         }
+        // ❌ KHÔNG closeConnection() ở đây — để các hàm khác còn dùng
         return eid;
     }
 
     /**
-     * Lấy thông tin Employee (bao gồm tên, phòng ban, supervisor)
+     * Lấy thông tin đầy đủ của Employee (tên, phòng ban, vai trò)
      */
     @Override
     public Employee get(int id) {
         Employee e = null;
-        try {
-            String sql = """
-                SELECT e.eid, e.ename, e.did, e.supervisorid
-                FROM Employee e
-                WHERE e.eid = ?
-            """;
-            PreparedStatement stm = connection.prepareStatement(sql);
+        String sql = """
+            SELECT e.eid, e.ename, d.did, d.dname, r.rname
+            FROM Employee e
+            JOIN Division d ON e.did = d.did
+            JOIN Enrollment en ON e.eid = en.eid
+            JOIN UserRole ur ON en.uid = ur.uid
+            JOIN Role r ON ur.rid = r.rid
+            WHERE e.eid = ?
+        """;
+
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
             stm.setInt(1, id);
             ResultSet rs = stm.executeQuery();
             if (rs.next()) {
                 e = new Employee();
                 e.setId(rs.getInt("eid"));
                 e.setName(rs.getString("ename"));
-                // có thể thêm lấy supervisor hoặc department nếu cần
+
+                Department dept = new Department();
+                dept.setId(rs.getInt("did"));
+                dept.setName(rs.getString("dname"));
+                e.setDept(dept);
+
+                e.setRole(rs.getString("rname"));
             }
         } catch (SQLException ex) {
             Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
-            closeConnection();
+            closeConnection(); // ✅ chỉ đóng 1 lần tại đây
         }
         return e;
     }
@@ -75,9 +72,8 @@ public class EnrollmentDBContext extends DBContext<Employee> {
     @Override
     public ArrayList<Employee> list() {
         ArrayList<Employee> list = new ArrayList<>();
-        try {
-            String sql = "SELECT eid, ename FROM Employee";
-            PreparedStatement stm = connection.prepareStatement(sql);
+        String sql = "SELECT eid, ename FROM Employee";
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
             ResultSet rs = stm.executeQuery();
             while (rs.next()) {
                 Employee e = new Employee();
@@ -92,11 +88,11 @@ public class EnrollmentDBContext extends DBContext<Employee> {
         }
         return list;
     }
-public Employee getByName(String name) {
-    Employee e = null;
-    try {
+
+    public Employee getByName(String name) {
+        Employee e = null;
         String sql = """
-            SELECT e.eid, e.ename, d.did, d.dname, r.rid, r.rname
+            SELECT e.eid, e.ename, d.did, d.dname, r.rname
             FROM Employee e
             JOIN Division d ON e.did = d.did
             JOIN Enrollment en ON e.eid = en.eid
@@ -104,31 +100,28 @@ public Employee getByName(String name) {
             JOIN Role r ON ur.rid = r.rid
             WHERE LOWER(LTRIM(RTRIM(e.ename))) = LOWER(LTRIM(RTRIM(?)))
         """;
-        PreparedStatement stm = connection.prepareStatement(sql);
-        stm.setString(1, name);
-        ResultSet rs = stm.executeQuery();
-        if (rs.next()) {
-            e = new Employee();
-            e.setId(rs.getInt("eid"));
-            e.setName(rs.getString("ename"));
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
+            stm.setString(1, name);
+            ResultSet rs = stm.executeQuery();
+            if (rs.next()) {
+                e = new Employee();
+                e.setId(rs.getInt("eid"));
+                e.setName(rs.getString("ename"));
 
-            // Gắn phòng ban
-            Department dept = new Department();
-            dept.setId(rs.getInt("did"));
-            dept.setName(rs.getString("dname"));
-            e.setDept(dept);
+                Department dept = new Department();
+                dept.setId(rs.getInt("did"));
+                dept.setName(rs.getString("dname"));
+                e.setDept(dept);
 
-            // Gắn vai trò
-            e.setRole(rs.getString("rname"));
+                e.setRole(rs.getString("rname"));
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            closeConnection();
         }
-    } catch (SQLException ex) {
-        Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);
-    } finally {
-        closeConnection();
+        return e;
     }
-    return e;
-}
-
 
     @Override
     public void insert(Employee model) {

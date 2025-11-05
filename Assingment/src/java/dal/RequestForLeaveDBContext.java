@@ -100,7 +100,9 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
                 FROM RequestForLeave r
                 JOIN Org o ON o.eid = r.created_by
                 JOIN Employee e ON e.eid = r.created_by
-                WHERE r.[to] >= ? AND r.[from] <= ?
+                WHERE r.[to] >= ? 
+                AND r.[from] <= ? 
+                AND r.status = 1   -- ✅ chỉ hiển thị đơn đã duyệt
                 ORDER BY e.ename
             """;
 
