@@ -37,7 +37,7 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
                 FROM Org e 
                 INNER JOIN RequestForLeave r ON e.eid = r.created_by
                 LEFT JOIN Employee p ON p.eid = r.processed_by
-                ORDER BY r.created_time DESC
+                ORDER BY r.created_time ASC
             """;
 
             PreparedStatement stm = connection.prepareStatement(sql);
@@ -176,15 +176,25 @@ VALUES (?, GETDATE(), ?, ?, ?, ?, ?)
     @Override
     public void update(RequestForLeave model) {
         try {
-            String sql = """
-                UPDATE RequestForLeave 
-                SET status = ?, processed_by = ? 
-                WHERE rid = ?
-            """;
-            PreparedStatement stm = connection.prepareStatement(sql);
-            stm.setInt(1, model.getStatus());
-            stm.setInt(2, model.getProcessed_by().getId());
-            stm.setInt(3, model.getId());
+            String sql;
+            PreparedStatement stm;
+
+            if (model.getProcessed_by() != null) {
+                // ✅ Trường hợp duyệt hoặc từ chối
+                sql = "UPDATE RequestForLeave SET status = ?, processed_by = ? WHERE rid = ?";
+                stm = connection.prepareStatement(sql);
+                stm.setInt(1, model.getStatus());
+                stm.setInt(2, model.getProcessed_by().getId());
+                stm.setInt(3, model.getId());
+            } else {
+                // ✅ Trường hợp người tạo cập nhật đơn
+                sql = "UPDATE RequestForLeave SET title = ?, reason = ? WHERE rid = ?";
+                stm = connection.prepareStatement(sql);
+                stm.setString(1, model.getTitle());
+                stm.setString(2, model.getReason());
+                stm.setInt(3, model.getId());
+            }
+
             stm.executeUpdate();
         } catch (SQLException ex) {
             Logger.getLogger(RequestForLeaveDBContext.class.getName()).log(Level.SEVERE, null, ex);
@@ -219,17 +229,45 @@ VALUES (?, GETDATE(), ?, ?, ?, ?, ?)
     public RequestForLeave get(int id) {
         RequestForLeave rfl = null;
         try {
-            String sql = "SELECT * FROM RequestForLeave WHERE rid = ?";
+            String sql = """
+            SELECT 
+                r.rid, r.title, r.created_time, r.[from], r.[to], 
+                r.reason, r.status, 
+                e.eid AS created_by_id, e.ename AS created_by_name,
+                p.eid AS processed_by_id, p.ename AS processed_by_name
+            FROM RequestForLeave r
+            JOIN Employee e ON e.eid = r.created_by
+            LEFT JOIN Employee p ON p.eid = r.processed_by
+            WHERE r.rid = ?
+        """;
             PreparedStatement stm = connection.prepareStatement(sql);
             stm.setInt(1, id);
             ResultSet rs = stm.executeQuery();
+
             if (rs.next()) {
                 rfl = new RequestForLeave();
                 rfl.setId(rs.getInt("rid"));
+                rfl.setTitle(rs.getString("title"));
+                rfl.setCreated_time(rs.getTimestamp("created_time"));
                 rfl.setFrom(rs.getDate("from"));
                 rfl.setTo(rs.getDate("to"));
                 rfl.setReason(rs.getString("reason"));
                 rfl.setStatus(rs.getInt("status"));
+
+                // Người tạo đơn
+                Employee creator = new Employee();
+                creator.setId(rs.getInt("created_by_id"));
+                creator.setName(rs.getString("created_by_name"));
+                rfl.setCreated_by(creator);
+
+                // Người xử lý (nếu có)
+                int pid = rs.getInt("processed_by_id");
+                if (!rs.wasNull()) {
+                    Employee processed = new Employee();
+                    processed.setId(pid);
+                    processed.setName(rs.getString("processed_by_name"));
+                    rfl.setProcessed_by(processed);
+                }
             }
         } catch (SQLException ex) {
             Logger.getLogger(RequestForLeaveDBContext.class.getName()).log(Level.SEVERE, null, ex);
@@ -238,4 +276,5 @@ VALUES (?, GETDATE(), ?, ?, ?, ?, ?)
         }
         return rfl;
     }
+
 }
