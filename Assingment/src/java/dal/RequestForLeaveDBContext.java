@@ -176,34 +176,29 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
     @Override
     public void update(RequestForLeave model) {
         try {
-            String sql;
-            PreparedStatement stm;
+            String sql = """
+            UPDATE RequestForLeave
+            SET title = ?, reason = ?, [from] = ?, [to] = ?, status = ?, processed_by = ?
+            WHERE rid = ?
+        """;
+
+            PreparedStatement stm = connection.prepareStatement(sql);
+            stm.setString(1, model.getTitle());
+            stm.setString(2, model.getReason());
+            stm.setDate(3, model.getFrom());
+            stm.setDate(4, model.getTo());
 
             if (model.getProcessed_by() != null) {
-                // ✅ Duyệt / từ chối
-                sql = """
-                    UPDATE RequestForLeave 
-                    SET status = ?, processed_by = ? 
-                    WHERE rid = ?
-                """;
-                stm = connection.prepareStatement(sql);
-                stm.setInt(1, model.getStatus());
-                stm.setInt(2, model.getProcessed_by().getId());
-                stm.setInt(3, model.getId());
+                stm.setInt(5, model.getStatus());
+                stm.setInt(6, model.getProcessed_by().getId());
             } else {
-                // ✅ Người tạo cập nhật
-                sql = """
-                    UPDATE RequestForLeave 
-                    SET title = ?, reason = ? 
-                    WHERE rid = ?
-                """;
-                stm = connection.prepareStatement(sql);
-                stm.setString(1, model.getTitle());
-                stm.setString(2, model.getReason());
-                stm.setInt(3, model.getId());
+                stm.setInt(5, model.getStatus());
+                stm.setNull(6, java.sql.Types.INTEGER);
             }
 
+            stm.setInt(7, model.getId());
             stm.executeUpdate();
+
         } catch (SQLException ex) {
             Logger.getLogger(RequestForLeaveDBContext.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
