@@ -27,6 +27,7 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
                     r.rid,
                     r.created_by,
                     e.ename AS created_name,
+                    r.title,
                     r.created_time,
                     r.[from],
                     r.[to],
@@ -47,6 +48,7 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
             while (rs.next()) {
                 RequestForLeave rfl = new RequestForLeave();
                 rfl.setId(rs.getInt("rid"));
+                rfl.setTitle(rs.getString("title"));
                 rfl.setCreated_time(rs.getTimestamp("created_time"));
                 rfl.setFrom(rs.getDate("from"));
                 rfl.setTo(rs.getDate("to"));
@@ -93,6 +95,7 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
                     r.rid,
                     r.created_by,
                     e.ename AS created_name,
+                    r.title,
                     r.[from],
                     r.[to],
                     r.reason,
@@ -102,7 +105,7 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
                 JOIN Employee e ON e.eid = r.created_by
                 WHERE r.[to] >= ? 
                 AND r.[from] <= ? 
-                AND r.status = 1   -- ✅ chỉ hiển thị đơn đã duyệt
+                AND r.status = 1
                 ORDER BY e.ename
             """;
 
@@ -115,6 +118,7 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
             while (rs.next()) {
                 RequestForLeave rfl = new RequestForLeave();
                 rfl.setId(rs.getInt("rid"));
+                rfl.setTitle(rs.getString("title"));
                 rfl.setFrom(rs.getDate("from"));
                 rfl.setTo(rs.getDate("to"));
                 rfl.setReason(rs.getString("reason"));
@@ -142,10 +146,10 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
     public void insert(RequestForLeave model) {
         try {
             String sql = """
-INSERT INTO RequestForLeave 
-(created_by, created_time, title, [from], [to], reason, status)
-VALUES (?, GETDATE(), ?, ?, ?, ?, ?)
-""";
+                INSERT INTO RequestForLeave 
+                (created_by, created_time, title, [from], [to], reason, status)
+                VALUES (?, GETDATE(), ?, ?, ?, ?, ?)
+            """;
             PreparedStatement stm = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             stm.setInt(1, model.getCreated_by().getId());
             stm.setString(2, model.getTitle());
@@ -153,16 +157,12 @@ VALUES (?, GETDATE(), ?, ?, ?, ?, ?)
             stm.setDate(4, model.getTo());
             stm.setString(5, model.getReason());
             stm.setInt(6, model.getStatus());
-
-            // ✅ Thực thi SQL
             stm.executeUpdate();
 
-            // ✅ Lấy ID vừa tạo (nếu cần)
             ResultSet rs = stm.getGeneratedKeys();
             if (rs.next()) {
                 model.setId(rs.getInt(1));
             }
-
         } catch (SQLException ex) {
             Logger.getLogger(RequestForLeaveDBContext.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
@@ -171,7 +171,7 @@ VALUES (?, GETDATE(), ?, ?, ?, ?, ?)
     }
 
     /**
-     * Cập nhật trạng thái đơn (approve/reject)
+     * Cập nhật đơn nghỉ phép (cả cập nhật, duyệt, từ chối)
      */
     @Override
     public void update(RequestForLeave model) {
@@ -180,15 +180,23 @@ VALUES (?, GETDATE(), ?, ?, ?, ?, ?)
             PreparedStatement stm;
 
             if (model.getProcessed_by() != null) {
-                // ✅ Trường hợp duyệt hoặc từ chối
-                sql = "UPDATE RequestForLeave SET status = ?, processed_by = ? WHERE rid = ?";
+                // ✅ Duyệt / từ chối
+                sql = """
+                    UPDATE RequestForLeave 
+                    SET status = ?, processed_by = ? 
+                    WHERE rid = ?
+                """;
                 stm = connection.prepareStatement(sql);
                 stm.setInt(1, model.getStatus());
                 stm.setInt(2, model.getProcessed_by().getId());
                 stm.setInt(3, model.getId());
             } else {
-                // ✅ Trường hợp người tạo cập nhật đơn
-                sql = "UPDATE RequestForLeave SET title = ?, reason = ? WHERE rid = ?";
+                // ✅ Người tạo cập nhật
+                sql = """
+                    UPDATE RequestForLeave 
+                    SET title = ?, reason = ? 
+                    WHERE rid = ?
+                """;
                 stm = connection.prepareStatement(sql);
                 stm.setString(1, model.getTitle());
                 stm.setString(2, model.getReason());
@@ -204,7 +212,7 @@ VALUES (?, GETDATE(), ?, ?, ?, ?, ?)
     }
 
     /**
-     * Xóa đơn (nếu cần)
+     * Xóa đơn nghỉ phép
      */
     @Override
     public void delete(RequestForLeave model) {
@@ -225,21 +233,24 @@ VALUES (?, GETDATE(), ?, ?, ?, ?, ?)
         return new ArrayList<>();
     }
 
+    /**
+     * Lấy chi tiết 1 đơn nghỉ phép
+     */
     @Override
     public RequestForLeave get(int id) {
         RequestForLeave rfl = null;
         try {
             String sql = """
-            SELECT 
-                r.rid, r.title, r.created_time, r.[from], r.[to], 
-                r.reason, r.status, 
-                e.eid AS created_by_id, e.ename AS created_by_name,
-                p.eid AS processed_by_id, p.ename AS processed_by_name
-            FROM RequestForLeave r
-            JOIN Employee e ON e.eid = r.created_by
-            LEFT JOIN Employee p ON p.eid = r.processed_by
-            WHERE r.rid = ?
-        """;
+                SELECT 
+                    r.rid, r.title, r.created_time, r.[from], r.[to],
+                    r.reason, r.status,
+                    e.eid AS created_by_id, e.ename AS created_by_name,
+                    p.eid AS processed_by_id, p.ename AS processed_by_name
+                FROM RequestForLeave r
+                JOIN Employee e ON e.eid = r.created_by
+                LEFT JOIN Employee p ON p.eid = r.processed_by
+                WHERE r.rid = ?
+            """;
             PreparedStatement stm = connection.prepareStatement(sql);
             stm.setInt(1, id);
             ResultSet rs = stm.executeQuery();
@@ -254,13 +265,11 @@ VALUES (?, GETDATE(), ?, ?, ?, ?, ?)
                 rfl.setReason(rs.getString("reason"));
                 rfl.setStatus(rs.getInt("status"));
 
-                // Người tạo đơn
                 Employee creator = new Employee();
                 creator.setId(rs.getInt("created_by_id"));
                 creator.setName(rs.getString("created_by_name"));
                 rfl.setCreated_by(creator);
 
-                // Người xử lý (nếu có)
                 int pid = rs.getInt("processed_by_id");
                 if (!rs.wasNull()) {
                     Employee processed = new Employee();
@@ -276,5 +285,4 @@ VALUES (?, GETDATE(), ?, ?, ?, ?, ?)
         }
         return rfl;
     }
-
 }
