@@ -30,6 +30,17 @@ public class EnrollmentDBContext extends DBContext<Employee> {
     }
 
     /**
+     * Lấy Employee dựa trên User Id
+     */
+    public Employee getEmployeeByUserId(int uid) {
+        int eid = getEmployeeIdByUserId(uid); // dùng phương thức sẵn có
+        if (eid != -1) {
+            return get(eid); // lấy Employee theo eid
+        }
+        return null;
+    }
+
+    /**
      * Lấy thông tin đầy đủ của Employee (tên, phòng ban, vai trò, supervisor)
      */
     @Override
@@ -60,7 +71,6 @@ public class EnrollmentDBContext extends DBContext<Employee> {
                 dept.setName(rs.getString("dname"));
                 e.setDept(dept);
 
-                // ✅ Gắn supervisor nếu có
                 int supervisorId = rs.getInt("supervisorid");
                 if (supervisorId != 0) {
                     Employee supervisor = getSupervisorByEmployeeId(supervisorId);
@@ -69,8 +79,6 @@ public class EnrollmentDBContext extends DBContext<Employee> {
             }
         } catch (SQLException ex) {
             Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            closeConnection();
         }
         return e;
     }
@@ -109,46 +117,115 @@ public class EnrollmentDBContext extends DBContext<Employee> {
             }
         } catch (SQLException ex) {
             Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            closeConnection();
         }
         return list;
     }
-public ArrayList<Employee> searchByName(String name) {
-    ArrayList<Employee> list = new ArrayList<>();
-    String sql = """
-        SELECT e.eid, e.ename, d.did, d.dname, r.rname
-        FROM Employee e
-        JOIN Division d ON e.did = d.did
-        JOIN Enrollment en ON e.eid = en.eid
-        JOIN UserRole ur ON en.uid = ur.uid
-        JOIN Role r ON ur.rid = r.rid
-        WHERE LOWER(e.ename) LIKE LOWER(?)
-    """;
-    try (PreparedStatement stm = connection.prepareStatement(sql)) {
-        stm.setString(1, "%" + name.trim() + "%");
-        ResultSet rs = stm.executeQuery();
-        while (rs.next()) {
-            Employee e = new Employee();
-            e.setId(rs.getInt("eid"));
-            e.setName(rs.getString("ename"));
 
-            Department dept = new Department();
-            dept.setId(rs.getInt("did"));
-            dept.setName(rs.getString("dname"));
-            e.setDept(dept);
+    /**
+     * Tìm nhân viên theo tên
+     */
+    public ArrayList<Employee> searchByName(String name) {
+        ArrayList<Employee> list = new ArrayList<>();
+        String sql = """
+            SELECT e.eid, e.ename, d.did, d.dname, r.rname
+            FROM Employee e
+            JOIN Division d ON e.did = d.did
+            JOIN Enrollment en ON e.eid = en.eid
+            JOIN UserRole ur ON en.uid = ur.uid
+            JOIN Role r ON ur.rid = r.rid
+            WHERE LOWER(e.ename) LIKE LOWER(?)
+        """;
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
+            stm.setString(1, "%" + name.trim() + "%");
+            ResultSet rs = stm.executeQuery();
+            while (rs.next()) {
+                Employee e = new Employee();
+                e.setId(rs.getInt("eid"));
+                e.setName(rs.getString("ename"));
 
-            e.setRole(rs.getString("rname"));
-            list.add(e);
+                Department dept = new Department();
+                dept.setId(rs.getInt("did"));
+                dept.setName(rs.getString("dname"));
+                e.setDept(dept);
+
+                e.setRole(rs.getString("rname"));
+                list.add(e);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);
         }
-    } catch (SQLException ex) {
-        Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);
-    } finally {
-        closeConnection();
+        return list;
     }
-    return list;
-}
 
+    /**
+     * Lấy tất cả nhân viên trong cùng phòng ban với employee id
+     */
+    public ArrayList<Employee> getEmployeesByDivisionId(int eid) {
+        ArrayList<Employee> list = new ArrayList<>();
+        String sql = """
+            SELECT e.eid, e.ename, d.did, d.dname, r.rname
+            FROM Employee e
+            JOIN Division d ON e.did = d.did
+            JOIN Enrollment en ON e.eid = en.eid
+            JOIN UserRole ur ON en.uid = ur.uid
+            JOIN Role r ON ur.rid = r.rid
+            WHERE e.did = (SELECT did FROM Employee WHERE eid = ?)
+        """;
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
+            stm.setInt(1, eid);
+            ResultSet rs = stm.executeQuery();
+            while (rs.next()) {
+                Employee e = new Employee();
+                e.setId(rs.getInt("eid"));
+                e.setName(rs.getString("ename"));
+
+                Department dept = new Department();
+                dept.setId(rs.getInt("did"));
+                dept.setName(rs.getString("dname"));
+                e.setDept(dept);
+
+                e.setRole(rs.getString("rname"));
+                list.add(e);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return list;
+    }
+
+    /**
+     * Lấy tất cả nhân viên trong công ty
+     */
+    public ArrayList<Employee> getAllEmployees() {
+        ArrayList<Employee> list = new ArrayList<>();
+        String sql = """
+            SELECT e.eid, e.ename, d.did, d.dname, r.rname
+            FROM Employee e
+            JOIN Division d ON e.did = d.did
+            JOIN Enrollment en ON e.eid = en.eid
+            JOIN UserRole ur ON en.uid = ur.uid
+            JOIN Role r ON ur.rid = r.rid
+        """;
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
+            ResultSet rs = stm.executeQuery();
+            while (rs.next()) {
+                Employee e = new Employee();
+                e.setId(rs.getInt("eid"));
+                e.setName(rs.getString("ename"));
+
+                Department dept = new Department();
+                dept.setId(rs.getInt("did"));
+                dept.setName(rs.getString("dname"));
+                e.setDept(dept);
+
+                e.setRole(rs.getString("rname"));
+                list.add(e);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(EnrollmentDBContext.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return list;
+    }
 
     @Override
     public void insert(Employee model) {
@@ -164,4 +241,32 @@ public ArrayList<Employee> searchByName(String name) {
     public void delete(Employee model) {
         throw new UnsupportedOperationException("Delete Employee not supported.");
     }
+
+    public ArrayList<Employee> getEmployeesBySupervisorOrDivision(int supervisorId) {
+        ArrayList<Employee> list = new ArrayList<>();
+        String sql = """
+        WITH Org AS (
+            SELECT * FROM Employee WHERE supervisorid = ? OR eid = ?
+            UNION ALL
+            SELECT e.* FROM Employee e
+            INNER JOIN Org o ON e.supervisorid = o.eid
+        )
+        SELECT DISTINCT eid, ename, did FROM Org
+    """;
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
+            stm.setInt(1, supervisorId);
+            stm.setInt(2, supervisorId);
+            ResultSet rs = stm.executeQuery();
+            while (rs.next()) {
+                Employee e = new Employee();
+                e.setId(rs.getInt("eid"));
+                e.setName(rs.getString("ename"));
+                list.add(e);
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return list;
+    }
+
 }

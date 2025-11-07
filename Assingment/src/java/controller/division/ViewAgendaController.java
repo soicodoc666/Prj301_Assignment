@@ -1,21 +1,20 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package controller.division;
 
 import controller.iam.BaseRequiredAuthorizationController;
 import dal.EnrollmentDBContext;
 import dal.RequestForLeaveDBContext;
+import dal.RoleDBContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import model.Employee;
 import model.RequestForLeave;
+import model.iam.Role;
 import model.iam.User;
 
 @WebServlet(urlPatterns = "/division/agenda")
@@ -24,61 +23,103 @@ public class ViewAgendaController extends BaseRequiredAuthorizationController {
     @Override
     protected void processPost(HttpServletRequest req, HttpServletResponse resp, User user)
             throws ServletException, IOException {
-        processGet(req, resp, user); // chỉ dùng GET cho hiển thị
+        processGet(req, resp, user);
     }
 
     @Override
     protected void processGet(HttpServletRequest req, HttpServletResponse resp, User user)
             throws ServletException, IOException {
-        // ✅ Đặt mã hóa UTF-8 cho toàn bộ request/response
-        req.setCharacterEncoding("UTF-8");
-        resp.setCharacterEncoding("UTF-8");
-        resp.setContentType("text/html;charset=UTF-8");
 
+        // 1. Kiểm tra feature
+        RoleDBContext roleDB = new RoleDBContext();
+        ArrayList<Role> roles = roleDB.getByUserId(user.getId());
+        boolean canViewAgenda = roles.stream()
+                .flatMap(r -> r.getFeatures().stream())
+                .anyMatch(f -> "/division/agenda".equals(f.getUrl()));
+        if (!canViewAgenda) {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền truy cập.");
+            return;
+        }
+
+        // 2. Lấy viewType
+        String viewType = req.getParameter("viewType");
+        if (viewType == null) {
+            viewType = "self"; // mặc định
+        }
         EnrollmentDBContext enrollDB = new EnrollmentDBContext();
+        RequestForLeaveDBContext leaveDB = new RequestForLeaveDBContext();
         int eid = enrollDB.getEmployeeIdByUserId(user.getId());
 
-        // Lấy khoảng thời gian từ request
-        String fromRaw = req.getParameter("from");
-        String toRaw = req.getParameter("to");
+        ArrayList<Employee> employees = new ArrayList<>();
+        String roleName = user.getRole().getName();
 
+        // 3. Phân quyền theo viewType
+        switch (viewType) {
+            case "all":
+                if ("Trưởng Bộ phận (IT Head)".equals(roleName)) {
+                    employees = enrollDB.getAllEmployees();
+                }
+                break;
+
+            case "division":
+                employees = enrollDB.getEmployeesBySupervisorOrDivision(eid);
+                break;
+
+            case "self":
+            default:
+                Employee self = enrollDB.getEmployeeByUserId(user.getId());
+                if (self != null) {
+                    employees.add(self);
+                }
+                break;
+        }
+
+        // 4. Khoảng thời gian
         java.sql.Date today = new java.sql.Date(System.currentTimeMillis());
         java.sql.Date sevenDaysAgo = new java.sql.Date(today.getTime() - 6L * 24 * 60 * 60 * 1000);
+        java.sql.Date from = (req.getParameter("from") == null || req.getParameter("from").isEmpty())
+                ? sevenDaysAgo : java.sql.Date.valueOf(req.getParameter("from"));
+        java.sql.Date to = (req.getParameter("to") == null || req.getParameter("to").isEmpty())
+                ? today : java.sql.Date.valueOf(req.getParameter("to"));
 
-        java.sql.Date from = (fromRaw == null || fromRaw.isEmpty()) ? sevenDaysAgo : java.sql.Date.valueOf(fromRaw);
-        java.sql.Date to = (toRaw == null || toRaw.isEmpty()) ? today : java.sql.Date.valueOf(toRaw);
+        // 5. Lấy các đơn nghỉ phép hợp lệ
+        ArrayList<RequestForLeave> requests = leaveDB.getLeavesInRangeByDivision(eid, from, to);
 
-        // Lấy danh sách đơn nghỉ
-        RequestForLeaveDBContext db = new RequestForLeaveDBContext();
-        ArrayList<RequestForLeave> requests = db.getLeavesInRangeByDivision(eid, from, to);
-
-        // Tạo danh sách ngày
+        // 6. Tạo danh sách ngày
         ArrayList<java.sql.Date> days = new ArrayList<>();
-        for (long d = from.getTime(); d <= to.getTime(); d += 86400000L) { // cộng 1 ngày
+        for (long d = from.getTime(); d <= to.getTime(); d += 86400000L) {
             days.add(new java.sql.Date(d));
         }
 
-        // Danh sách nhân viên
-        ArrayList<Employee> employees = new ArrayList<>();
-        for (RequestForLeave r : requests) {
-            boolean exists = false;
-            for (Employee e : employees) {
-                if (e.getId() == r.getCreated_by().getId()) {
-                    exists = true;
-                    break;
-                }
+        // 7. Tạo map trạng thái
+        Map<Integer, Map<java.sql.Date, String>> agenda = new HashMap<>();
+        for (Employee e : employees) {
+            Map<java.sql.Date, String> map = new HashMap<>();
+            for (java.sql.Date day : days) {
+                map.put(day, "Đi làm");
             }
-            if (!exists) {
-                employees.add(r.getCreated_by());
+            agenda.put(e.getId(), map);
+        }
+
+        for (RequestForLeave r : requests) {
+            Map<java.sql.Date, String> map = agenda.get(r.getCreated_by().getId());
+            if (map != null) {
+                for (long d = r.getFrom().getTime(); d <= r.getTo().getTime(); d += 86400000L) {
+                    java.sql.Date day = new java.sql.Date(d);
+                    if (map.containsKey(day)) {
+                        map.put(day, "Nghỉ phép");
+                    }
+                }
             }
         }
 
+        // 8. Truyền sang JSP
+        req.setAttribute("employees", employees);
+        req.setAttribute("days", days);
+        req.setAttribute("agenda", agenda);
+        req.setAttribute("viewType", viewType);
         req.setAttribute("from", from);
         req.setAttribute("to", to);
-        req.setAttribute("requests", requests);
-        req.setAttribute("days", days);
-        req.setAttribute("employees", employees);
         req.getRequestDispatcher("../view/division/agenda.jsp").forward(req, resp);
     }
-
 }

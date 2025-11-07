@@ -37,7 +37,6 @@ public class CreateController extends BaseRequiredAuthorizationController {
         String toRaw = req.getParameter("to");
         String reason = req.getParameter("reason");
 
-        // ✅ Lấy Employee đang đăng nhập
         EnrollmentDBContext enrollDB = new EnrollmentDBContext();
         int eid = enrollDB.getEmployeeIdByUserId(user.getId());
         Employee emp = enrollDB.get(eid);
@@ -48,7 +47,6 @@ public class CreateController extends BaseRequiredAuthorizationController {
             return;
         }
 
-        // Kiểm tra dữ liệu
         if (title == null || title.trim().isEmpty()
                 || fromRaw == null || toRaw == null
                 || reason == null || reason.trim().isEmpty()) {
@@ -66,7 +64,13 @@ public class CreateController extends BaseRequiredAuthorizationController {
         reqLeave.setFrom(from);
         reqLeave.setTo(to);
         reqLeave.setReason(reason);
-        reqLeave.setStatus(0); // Chờ duyệt
+
+        // ✅ Nếu nhân viên không có cấp trên thì tự động duyệt
+        if (emp.getSupervisor() == null) {
+            reqLeave.setStatus(1); // Đã duyệt
+        } else {
+            reqLeave.setStatus(0); // Chờ duyệt
+        }
 
         RequestForLeaveDBContext db = new RequestForLeaveDBContext();
         db.insert(reqLeave);
