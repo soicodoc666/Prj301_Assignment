@@ -8,8 +8,10 @@ import java.util.ArrayList;
 import model.BaseModel;
 
 public class Feature extends BaseModel {
+
     private String url;
     private ArrayList<Role> roles = new ArrayList<>();
+    private String name;
 
     public String getUrl() {
         return url;
@@ -26,5 +28,13 @@ public class Feature extends BaseModel {
     public void setRoles(ArrayList<Role> roles) {
         this.roles = roles;
     }
-    
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
 }
