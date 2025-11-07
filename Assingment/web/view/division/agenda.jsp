@@ -19,7 +19,6 @@
                 display:flex;
                 justify-content:space-between;
                 align-items:center;
-                position: relative;
             }
             header h2 {
                 margin:0;
@@ -153,7 +152,7 @@
         <div class="container">
             <a href="../home" class="back-home">🏠 Quay về Trang chủ</a>
 
-            <!-- Form filter và export -->
+            <!-- Form filter -->
             <form class="filter" method="get">
                 <label>Từ ngày:</label>
                 <input type="date" name="from" value="${from}">
