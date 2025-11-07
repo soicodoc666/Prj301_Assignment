@@ -21,17 +21,19 @@ public class ListController extends BaseRequiredAuthorizationController {
     protected void processGet(HttpServletRequest req, HttpServletResponse resp, User user)
             throws ServletException, IOException {
 
-        // 🔥 Chống cache trình duyệt
-        resp.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        resp.setHeader("Pragma", "no-cache");
-        resp.setDateHeader("Expires", 0);
-
         EnrollmentDBContext enrollDB = new EnrollmentDBContext();
         int eid = enrollDB.getEmployeeIdByUserId(user.getId());
         Employee emp = enrollDB.get(eid);
 
         RequestForLeaveDBContext db = new RequestForLeaveDBContext();
         ArrayList<RequestForLeave> rfls = db.getByEmployeeAndSubodiaries(eid);
+
+        // ✅ Lấy thông báo từ session (nếu có)
+        String message = (String) req.getSession().getAttribute("message");
+        if (message != null) {
+            req.setAttribute("message", message);
+            req.getSession().removeAttribute("message");
+        }
 
         req.setAttribute("rfls", rfls);
         req.setAttribute("employee", emp);

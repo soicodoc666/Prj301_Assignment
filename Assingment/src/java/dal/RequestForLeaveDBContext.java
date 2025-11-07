@@ -113,46 +113,6 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
         }
     }
 
-    public void update(RequestForLeave r) {
-        String sql = """
-        UPDATE RequestForLeave 
-        SET title = ?, [from] = ?, [to] = ?, reason = ?, status = ?, created_time = GETDATE()
-        WHERE rid = ?
-    """;
-        try {
-            connection.setAutoCommit(false);
-
-            try (PreparedStatement stm = connection.prepareStatement(sql)) {
-                stm.setString(1, r.getTitle());
-                stm.setDate(2, r.getFrom());
-                stm.setDate(3, r.getTo());
-                stm.setString(4, r.getReason());
-                stm.setInt(5, r.getStatus());
-                stm.setInt(6, r.getId());
-                int affected = stm.executeUpdate();
-
-                if (affected == 0) {
-                    System.out.println("⚠️ Không có bản ghi nào được cập nhật!");
-                } else {
-                    System.out.println("✅ Cập nhật thành công " + affected + " bản ghi.");
-                }
-            }
-
-            connection.commit();
-        } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-            }
-            Logger.getLogger(RequestForLeaveDBContext.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException e) {
-            }
-            closeConnection();
-        }
-    }
 
     // Xóa đơn nghỉ phép
     public void delete(int rid) {
@@ -320,6 +280,11 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
 
     @Override
     public ArrayList<RequestForLeave> list() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public void update(RequestForLeave model) {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 }

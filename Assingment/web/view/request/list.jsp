@@ -141,6 +141,15 @@
 
         <div class="container">
             <h3>Danh sách yêu cầu của bạn</h3>
+
+            <!-- ✅ Hiển thị thông báo khi cập nhật, xóa, duyệt hoặc từ chối -->
+            <c:if test="${not empty message}">
+                <div style="background:#d4edda;color:#155724;padding:10px;
+                     border-radius:6px;margin-bottom:15px;border:1px solid #c3e6cb;">
+                    ${message}
+                </div>
+            </c:if>
+
             <c:if test="${not empty sessionScope.success}">
                 <div style="background:#d4edda;color:#155724;padding:10px;
                      border-radius:6px;margin-bottom:15px;border:1px solid #c3e6cb;">
@@ -162,6 +171,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Người tạo</th>
+                        <th>Tiêu đề</th>
                         <th>Lý do</th>
                         <th>Từ ngày</th>
                         <th>Đến ngày</th>
@@ -175,6 +185,7 @@
                         <tr>
                             <td>${r.id}</td>
                             <td>${r.created_by.name}</td>
+                            <td>${r.title}</td>
                             <td>${r.reason}</td>
                             <td>${r.from}</td>
                             <td>${r.to}</td>
@@ -200,7 +211,7 @@
                                 </c:if>
                             </td>
                             <td>
-                                <!-- Nút xem chi tiết luôn hiển thị -->
+                                <!-- Nút xem chi tiết -->
                                 <a href="review?id=${r.id}" class="btn btn-detail">Xem chi tiết</a>
                             </td>
                         </tr>

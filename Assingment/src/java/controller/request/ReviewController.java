@@ -7,6 +7,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import model.Employee;
 import model.RequestForLeave;
@@ -21,39 +22,34 @@ public class ReviewController extends BaseRequiredAuthorizationController {
 
         String action = req.getParameter("action");
         int rid = Integer.parseInt(req.getParameter("id"));
+        HttpSession session = req.getSession();
 
         RequestForLeaveDBContext db = new RequestForLeaveDBContext();
         EnrollmentDBContext enrollDB = new EnrollmentDBContext();
         int eid = enrollDB.getEmployeeIdByUserId(user.getId());
-        Employee emp = enrollDB.get(eid);
 
-        switch (action) {
-            case "update" -> {
-                RequestForLeave existing = db.get(rid); // ✅ lấy đơn hiện tại trong DB
-                if (existing != null) {
-                    existing.setTitle(req.getParameter("title"));
-                    existing.setFrom(java.sql.Date.valueOf(req.getParameter("from")));
-                    existing.setTo(java.sql.Date.valueOf(req.getParameter("to")));
-                    existing.setReason(req.getParameter("reason"));
-                    existing.setStatus(0);
-                    db.update(existing); // ✅ gọi update có đủ thông tin created_by, created_time
+        try {
+            switch (action) {            
+                case "delete" -> {
+                    db.delete(rid);
+                    session.setAttribute("success", "Xóa đơn nghỉ phép thành công!");
+                }
+
+                case "approve" -> {
+                    db.updateStatus(rid, 1, eid);
+                    session.setAttribute("success", "Đơn đã được chấp nhận!");
+                }
+
+                case "reject" -> {
+                    db.updateStatus(rid, 2, eid);
+                    session.setAttribute("success", "Đơn đã bị từ chối!");
                 }
             }
 
-            case "delete" -> {
-                db.delete(rid);
-            }
-
-            case "approve" -> {
-                db.updateStatus(rid, 1, eid);
-            }
-
-            case "reject" -> {
-                db.updateStatus(rid, 2, eid);
-            }
+        } catch (Exception ex) {
+            session.setAttribute("error", "Đã xảy ra lỗi: " + ex.getMessage());
         }
 
-        // ✅ Quay lại danh sách
         resp.sendRedirect(req.getContextPath() + "/request/list");
     }
 

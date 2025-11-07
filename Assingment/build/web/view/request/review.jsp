@@ -165,19 +165,19 @@
                 <!-- Nút hành động -->
                 <div>
                     <c:if test="${isOwner}">
-                        <button name="action" value="update" class="btn-update">Cập nhật</button>
+                        <button type="button" class="btn-update" onclick="window.location.href = 'list'">Đóng</button>
                         <button name="action" value="delete" class="btn-delete"
                                 onclick="return confirm('Bạn có chắc muốn xóa đơn này không?');">Xóa</button>
                     </c:if>
 
                     <c:if test="${!isOwner && reqLeave.status eq 0}">
                         <button name="action" value="approve" class="btn-approve">Chấp nhận</button>
-                        <button name="action" value="reject" class="btn-reject">Từ chối</button>
+                        <button name="action" value="reject" class="btn-reject">Từ chối</button><br/>
+                                    <a href="list" class="back">← Quay lại danh sách</a>
                     </c:if>
                 </div>
             </form>
 
-            <a href="list" class="back">← Quay lại danh sách</a>
         </div>
     </body>
 </html>
