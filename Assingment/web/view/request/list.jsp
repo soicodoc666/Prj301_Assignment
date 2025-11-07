@@ -141,6 +141,21 @@
 
         <div class="container">
             <h3>Danh sách yêu cầu của bạn</h3>
+            <c:if test="${not empty sessionScope.success}">
+                <div style="background:#d4edda;color:#155724;padding:10px;
+                     border-radius:6px;margin-bottom:15px;border:1px solid #c3e6cb;">
+                    ${sessionScope.success}
+                </div>
+                <c:remove var="success" scope="session"/>
+            </c:if>
+
+            <c:if test="${not empty sessionScope.error}">
+                <div style="background:#f8d7da;color:#721c24;padding:10px;
+                     border-radius:6px;margin-bottom:15px;border:1px solid #f5c6cb;">
+                    ${sessionScope.error}
+                </div>
+                <c:remove var="error" scope="session"/>
+            </c:if>
 
             <table>
                 <thead>

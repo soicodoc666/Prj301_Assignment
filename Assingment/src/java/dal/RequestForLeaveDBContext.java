@@ -139,17 +139,15 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
         return list;
     }
 
-    /**
-     * Thêm đơn nghỉ phép mới
-     */
     @Override
     public void insert(RequestForLeave model) {
         try {
+            connection.setAutoCommit(false); // thêm
             String sql = """
-                INSERT INTO RequestForLeave 
-                (created_by, created_time, title, [from], [to], reason, status)
-                VALUES (?, GETDATE(), ?, ?, ?, ?, ?)
-            """;
+            INSERT INTO RequestForLeave 
+            (created_by, created_time, title, [from], [to], reason, status)
+            VALUES (?, GETDATE(), ?, ?, ?, ?, ?)
+        """;
             PreparedStatement stm = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             stm.setInt(1, model.getCreated_by().getId());
             stm.setString(2, model.getTitle());
@@ -158,67 +156,87 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
             stm.setString(5, model.getReason());
             stm.setInt(6, model.getStatus());
             stm.executeUpdate();
+            connection.commit(); // ✅ thêm commit
 
             ResultSet rs = stm.getGeneratedKeys();
             if (rs.next()) {
                 model.setId(rs.getInt(1));
             }
         } catch (SQLException ex) {
+            try {
+                connection.rollback();
+            } catch (SQLException e) {
+            }
             Logger.getLogger(RequestForLeaveDBContext.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+            }
             closeConnection();
         }
     }
 
-    /**
-     * Cập nhật đơn nghỉ phép (cả cập nhật, duyệt, từ chối)
-     */
     @Override
     public void update(RequestForLeave model) {
         try {
-            String sql = """
-            UPDATE RequestForLeave
-            SET title = ?, reason = ?, [from] = ?, [to] = ?, status = ?, processed_by = ?
-            WHERE rid = ?
-        """;
-
-            PreparedStatement stm = connection.prepareStatement(sql);
-            stm.setString(1, model.getTitle());
-            stm.setString(2, model.getReason());
-            stm.setDate(3, model.getFrom());
-            stm.setDate(4, model.getTo());
+            connection.setAutoCommit(false);
+            String sql;
+            PreparedStatement stm;
 
             if (model.getProcessed_by() != null) {
-                stm.setInt(5, model.getStatus());
-                stm.setInt(6, model.getProcessed_by().getId());
+                sql = "UPDATE RequestForLeave SET status = ?, processed_by = ? WHERE rid = ?";
+                stm = connection.prepareStatement(sql);
+                stm.setInt(1, model.getStatus());
+                stm.setInt(2, model.getProcessed_by().getId());
+                stm.setInt(3, model.getId());
             } else {
-                stm.setInt(5, model.getStatus());
-                stm.setNull(6, java.sql.Types.INTEGER);
+                sql = "UPDATE RequestForLeave SET title = ?, reason = ?, [from] = ?, [to] = ? WHERE rid = ?";
+                stm = connection.prepareStatement(sql);
+                stm.setString(1, model.getTitle());
+                stm.setString(2, model.getReason());
+                stm.setDate(3, model.getFrom());
+                stm.setDate(4, model.getTo());
+                stm.setInt(5, model.getId());
             }
 
-            stm.setInt(7, model.getId());
             stm.executeUpdate();
-
+            connection.commit(); // ✅ thêm commit
         } catch (SQLException ex) {
+            try {
+                connection.rollback();
+            } catch (SQLException e) {
+            }
             Logger.getLogger(RequestForLeaveDBContext.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+            }
             closeConnection();
         }
     }
 
-    /**
-     * Xóa đơn nghỉ phép
-     */
     @Override
     public void delete(RequestForLeave model) {
         try {
+            connection.setAutoCommit(false);
             String sql = "DELETE FROM RequestForLeave WHERE rid = ?";
             PreparedStatement stm = connection.prepareStatement(sql);
             stm.setInt(1, model.getId());
             stm.executeUpdate();
+            connection.commit(); // ✅ thêm commit
         } catch (SQLException ex) {
+            try {
+                connection.rollback();
+            } catch (SQLException e) {
+            }
             Logger.getLogger(RequestForLeaveDBContext.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+            }
             closeConnection();
         }
     }
