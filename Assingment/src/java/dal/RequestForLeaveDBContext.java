@@ -113,7 +113,6 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
         }
     }
 
-
     // Xóa đơn nghỉ phép
     public void delete(int rid) {
         String sql = "DELETE FROM RequestForLeave WHERE rid = ?";
@@ -287,13 +286,9 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
     public void update(RequestForLeave model) {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
-    /**
- * Lấy tất cả đơn nghỉ phép trong khoảng từ 'from' đến 'to'
- * Dùng cho chế độ view "all"
- */
-public ArrayList<RequestForLeave> getLeavesInRange(java.sql.Date from, java.sql.Date to) {
-    ArrayList<RequestForLeave> list = new ArrayList<>();
-    String sql = """
+    public ArrayList<RequestForLeave> getLeavesInRange(java.sql.Date from, java.sql.Date to) {
+        ArrayList<RequestForLeave> list = new ArrayList<>();
+        String sql = """
         SELECT 
             r.rid,
             r.created_by,
@@ -310,32 +305,32 @@ public ArrayList<RequestForLeave> getLeavesInRange(java.sql.Date from, java.sql.
           AND r.status = 1
         ORDER BY e.ename
     """;
-    try (PreparedStatement stm = connection.prepareStatement(sql)) {
-        stm.setDate(1, from);
-        stm.setDate(2, to);
-        ResultSet rs = stm.executeQuery();
-        while (rs.next()) {
-            RequestForLeave rfl = new RequestForLeave();
-            rfl.setId(rs.getInt("rid"));
-            rfl.setTitle(rs.getString("title"));
-            rfl.setFrom(rs.getDate("from"));
-            rfl.setTo(rs.getDate("to"));
-            rfl.setReason(rs.getString("reason"));
-            rfl.setStatus(rs.getInt("status"));
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
+            stm.setDate(1, from);
+            stm.setDate(2, to);
+            ResultSet rs = stm.executeQuery();
+            while (rs.next()) {
+                RequestForLeave rfl = new RequestForLeave();
+                rfl.setId(rs.getInt("rid"));
+                rfl.setTitle(rs.getString("title"));
+                rfl.setFrom(rs.getDate("from"));
+                rfl.setTo(rs.getDate("to"));
+                rfl.setReason(rs.getString("reason"));
+                rfl.setStatus(rs.getInt("status"));
 
-            Employee emp = new Employee();
-            emp.setId(rs.getInt("created_by"));
-            emp.setName(rs.getString("created_name"));
-            rfl.setCreated_by(emp);
+                Employee emp = new Employee();
+                emp.setId(rs.getInt("created_by"));
+                emp.setName(rs.getString("created_name"));
+                rfl.setCreated_by(emp);
 
-            list.add(rfl);
+                list.add(rfl);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(RequestForLeaveDBContext.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            closeConnection();
         }
-    } catch (SQLException ex) {
-        Logger.getLogger(RequestForLeaveDBContext.class.getName()).log(Level.SEVERE, null, ex);
-    } finally {
-        closeConnection();
+        return list;
     }
-    return list;
-}
 
 }
