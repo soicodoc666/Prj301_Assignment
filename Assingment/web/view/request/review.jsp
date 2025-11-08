@@ -13,17 +13,17 @@
                 padding: 0;
             }
             .container {
-                max-width: 600px;
+                max-width: 650px;
                 margin: 40px auto;
-                background: white;
+                background: #fff;
                 border-radius: 12px;
-                padding: 30px 40px;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                padding: 35px 45px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             }
             h2 {
                 text-align: center;
-                color: #333;
-                margin-bottom: 20px;
+                color: #e1251b;
+                margin-bottom: 25px;
             }
             label {
                 font-weight: bold;
@@ -41,33 +41,17 @@
             }
             textarea {
                 resize: vertical;
-                min-height: 80px;
+                min-height: 90px;
             }
             button {
                 margin-top: 20px;
-                padding: 10px 15px;
+                padding: 10px 16px;
                 border: none;
                 border-radius: 6px;
                 cursor: pointer;
                 font-weight: bold;
                 transition: all 0.2s ease;
             }
-            .btn-update {
-                background-color: #007bff;
-                color: white;
-            }
-            .btn-update:hover {
-                background-color: #0056b3;
-            }
-
-            .btn-delete {
-                background-color: #6c757d;
-                color: white;
-            }
-            .btn-delete:hover {
-                background-color: #565e64;
-            }
-
             .btn-approve {
                 background-color: #28a745;
                 color: white;
@@ -75,7 +59,6 @@
             .btn-approve:hover {
                 background-color: #1e7e34;
             }
-
             .btn-reject {
                 background-color: #dc3545;
                 color: white;
@@ -83,13 +66,25 @@
             .btn-reject:hover {
                 background-color: #b02a37;
             }
-
-            a.back {
+            .btn-delete {
+                background-color: #6c757d;
+                color: white;
+            }
+            .btn-delete:hover {
+                background-color: #565e64;
+            }
+            .btn-back {
                 display: inline-block;
-                margin-top: 20px;
-                color: #e1251b;
+                background-color: #e1251b;
+                color: white;
                 text-decoration: none;
+                padding: 10px 18px;
+                border-radius: 6px;
                 font-weight: bold;
+                transition: background-color 0.2s;
+            }
+            .btn-back:hover {
+                background-color: #c51d15;
             }
             .msg-success {
                 background-color: #d4edda;
@@ -121,63 +116,58 @@
                 <div class="msg-error">${error}</div>
             </c:if>
 
-            <form action="review" method="post">
+            <!-- ✅ Quan trọng: dùng đường dẫn đầy đủ để servlet nhận đúng -->
+            <form action="${pageContext.request.contextPath}/request/review" method="post">
                 <input type="hidden" name="id" value="${reqLeave.id}">
 
-                <!-- Tiêu đề -->
                 <label>Tiêu đề:</label>
-                <input type="text" name="title" value="${reqLeave.title}"
+                <input type="text" name="title" value="${reqLeave.title}" 
                        <c:if test="${!isOwner}">readonly</c:if> required>
 
-                       <!-- Từ ngày -->
                        <label>Từ ngày:</label>
-                       <input type="date" name="from"
-                              value="${reqLeave.from}"
+                       <input type="date" name="from" value="${reqLeave.from}" 
                        <c:if test="${!isOwner}">readonly</c:if> required>
 
-                       <!-- Đến ngày -->
                        <label>Đến ngày:</label>
-                       <input type="date" name="to"
-                              value="${reqLeave.to}"
+                       <input type="date" name="to" value="${reqLeave.to}" 
                        <c:if test="${!isOwner}">readonly</c:if> required>
 
-                       <!-- Lý do -->
                        <label>Lý do:</label>
-                       <textarea name="reason" rows="4"
+                       <textarea name="reason" rows="4" 
                        <c:if test="${!isOwner}">readonly</c:if> required>${reqLeave.reason}</textarea>
 
-                       <!-- Trạng thái -->
                        <label>Trạng thái:</label>
                        <p>
                        <c:choose>
                            <c:when test="${reqLeave.status eq 0}">
-                               <span style="color:#f0ad4e; font-weight:bold;">Đang chờ duyệt</span>
+                               <span style="color:#f0ad4e;font-weight:bold;">⏳ Đang chờ duyệt</span>
                            </c:when>
                            <c:when test="${reqLeave.status eq 1}">
-                               <span style="color:#28a745; font-weight:bold;">Đã duyệt</span>
+                               <span style="color:#28a745;font-weight:bold;">✅ Đã duyệt</span>
                            </c:when>
                            <c:otherwise>
-                               <span style="color:#dc3545; font-weight:bold;">Đã từ chối</span>
+                               <span style="color:#dc3545;font-weight:bold;">❌ Đã từ chối</span>
                            </c:otherwise>
                        </c:choose>
                 </p>
 
-                <!-- Nút hành động -->
-                <div>
+                <div style="margin-top:20px;">
+                    <!-- Nếu là chủ đơn -->
                     <c:if test="${isOwner}">
-                        <button type="button" class="btn-update" onclick="window.location.href = 'list'">Đóng</button>
+                        <a href="${pageContext.request.contextPath}/request/list" class="btn-back">← Về danh sách</a>
                         <button name="action" value="delete" class="btn-delete"
-                                onclick="return confirm('Bạn có chắc muốn xóa đơn này không?');">Xóa</button>
+                                onclick="return confirm('Bạn có chắc muốn xóa đơn này không?');">Xóa đơn</button>
                     </c:if>
 
+                    <!-- Nếu là người duyệt -->
                     <c:if test="${!isOwner && reqLeave.status eq 0}">
                         <button name="action" value="approve" class="btn-approve">Chấp nhận</button>
-                        <button name="action" value="reject" class="btn-reject">Từ chối</button><br/>
-                                    <a href="list" class="back">← Quay lại danh sách</a>
+                        <button name="action" value="reject" class="btn-reject">Từ chối</button>
+                        <br><br>
+                        <a href="${pageContext.request.contextPath}/request/list" class="btn-back">← Quay lại danh sách</a>
                     </c:if>
                 </div>
             </form>
-
         </div>
     </body>
 </html>

@@ -43,29 +43,38 @@ public class ReviewController extends BaseRequiredAuthorizationController {
                     db.updateStatus(rid, 1, eid);
                     session.setAttribute("success", "Đơn đã được chấp nhận!");
 
-                    // Tạo thông báo cho người tạo đơn
+                    // Lấy lại đơn
                     RequestForLeave reqLeave = db.get(rid);
-                    Notification n = new Notification();
-                    n.setEid(reqLeave.getCreated_by().getId()); // gửi cho người tạo đơn
-                    n.setMessage("Đơn nghỉ phép #" + rid + " của bạn đã được chấp nhận!");
-                    n.setCreatedTime(new Timestamp(System.currentTimeMillis()));
-                    n.setIsSeen(false);
-                    notiDB.insert(n);
+                    if (reqLeave != null && reqLeave.getCreated_by() != null) {
+                        Notification n = new Notification();
+                        n.setEid(reqLeave.getCreated_by().getId()); // gửi cho người tạo đơn
+                        n.setMessage("Đơn nghỉ phép #" + rid + " của bạn đã được chấp nhận!");
+                        n.setCreatedTime(new Timestamp(System.currentTimeMillis()));
+                        n.setIsSeen(false);
+                        notiDB.insert(n);
+                    } else {
+                        System.out.println("⚠️ Không tìm thấy RequestForLeave #" + rid);
+                    }
                 }
 
                 case "reject" -> {
                     db.updateStatus(rid, 2, eid);
                     session.setAttribute("success", "Đơn đã bị từ chối!");
 
-                    // Tạo thông báo cho người tạo đơn
+                    // Lấy lại đơn
                     RequestForLeave reqLeave = db.get(rid);
-                    Notification n = new Notification();
-                    n.setEid(reqLeave.getCreated_by().getId()); // gửi cho người tạo đơn
-                    n.setMessage("Đơn nghỉ phép #" + rid + " của bạn đã bị từ chối!");
-                    n.setCreatedTime(new Timestamp(System.currentTimeMillis()));
-                    n.setIsSeen(false);
-                    notiDB.insert(n);
+                    if (reqLeave != null && reqLeave.getCreated_by() != null) {
+                        Notification n = new Notification();
+                        n.setEid(reqLeave.getCreated_by().getId());
+                        n.setMessage("Đơn nghỉ phép #" + rid + " của bạn đã bị từ chối!");
+                        n.setCreatedTime(new Timestamp(System.currentTimeMillis()));
+                        n.setIsSeen(false);
+                        notiDB.insert(n);
+                    } else {
+                        System.out.println("⚠️ Không tìm thấy RequestForLeave #" + rid);
+                    }
                 }
+
             }
         } catch (Exception ex) {
             session.setAttribute("error", "Đã xảy ra lỗi: " + ex.getMessage());

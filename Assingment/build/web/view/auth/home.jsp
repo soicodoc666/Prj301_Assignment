@@ -185,23 +185,7 @@
                         <div class="notification-badge">${unseenCount}</div>
                     </c:if>
                 </div>
-                <div class="dropdown" id="dropdownMenu">
-                    <c:forEach var="n" items="${notifications}">
-                        <div class="${!n.isSeen ? 'unseen' : ''}">
-                            ${n.message} <br/>
-                            <small>${n.createdTime}</small>
-                            <c:if test="${!n.isSeen}">
-                                <form action="${pageContext.request.contextPath}/division/notification" method="post" style="display:inline;">
-                                    <input type="hidden" name="action" value="markOne"/>
-                                    <input type="hidden" name="nid" value="${n.nid}"/>
-                                    <button type="submit">Đã xem</button>
-                                </form>
-                            </c:if>
-                        </div>
-                    </c:forEach>
-                    <form action="${pageContext.request.contextPath}/division/notification" method="post">
-                        <input type="hidden" name="action" value="markAll"/>
-                        <button type="submit">Đánh dấu tất cả đã xem</button>
+                <div class="dropdown" id="dropdownMenu">        
                     </form>
                     <a href="profile">Thông tin tài khoản</a>
                     <a href="logout">Đăng xuất</a>
