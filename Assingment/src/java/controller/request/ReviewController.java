@@ -3,14 +3,17 @@ package controller.request;
 import controller.iam.BaseRequiredAuthorizationController;
 import dal.EnrollmentDBContext;
 import dal.RequestForLeaveDBContext;
+import dal.NotificationDBContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.sql.Timestamp;
 import model.Employee;
 import model.RequestForLeave;
+import model.Notification;
 import model.iam.User;
 
 @WebServlet(urlPatterns = "/request/review")
@@ -26,10 +29,11 @@ public class ReviewController extends BaseRequiredAuthorizationController {
 
         RequestForLeaveDBContext db = new RequestForLeaveDBContext();
         EnrollmentDBContext enrollDB = new EnrollmentDBContext();
+        NotificationDBContext notiDB = new NotificationDBContext();
         int eid = enrollDB.getEmployeeIdByUserId(user.getId());
 
         try {
-            switch (action) {            
+            switch (action) {
                 case "delete" -> {
                     db.delete(rid);
                     session.setAttribute("success", "Xóa đơn nghỉ phép thành công!");
@@ -38,14 +42,31 @@ public class ReviewController extends BaseRequiredAuthorizationController {
                 case "approve" -> {
                     db.updateStatus(rid, 1, eid);
                     session.setAttribute("success", "Đơn đã được chấp nhận!");
+
+                    // Tạo thông báo cho người tạo đơn
+                    RequestForLeave reqLeave = db.get(rid);
+                    Notification n = new Notification();
+                    n.setEid(reqLeave.getCreated_by().getId()); // gửi cho người tạo đơn
+                    n.setMessage("Đơn nghỉ phép #" + rid + " của bạn đã được chấp nhận!");
+                    n.setCreatedTime(new Timestamp(System.currentTimeMillis()));
+                    n.setIsSeen(false);
+                    notiDB.insert(n);
                 }
 
                 case "reject" -> {
                     db.updateStatus(rid, 2, eid);
                     session.setAttribute("success", "Đơn đã bị từ chối!");
+
+                    // Tạo thông báo cho người tạo đơn
+                    RequestForLeave reqLeave = db.get(rid);
+                    Notification n = new Notification();
+                    n.setEid(reqLeave.getCreated_by().getId()); // gửi cho người tạo đơn
+                    n.setMessage("Đơn nghỉ phép #" + rid + " của bạn đã bị từ chối!");
+                    n.setCreatedTime(new Timestamp(System.currentTimeMillis()));
+                    n.setIsSeen(false);
+                    notiDB.insert(n);
                 }
             }
-
         } catch (Exception ex) {
             session.setAttribute("error", "Đã xảy ra lỗi: " + ex.getMessage());
         }
