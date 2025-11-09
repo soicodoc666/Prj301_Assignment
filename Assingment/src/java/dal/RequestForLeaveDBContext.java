@@ -79,10 +79,10 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
     @Override
     public void insert(RequestForLeave model) {
         String sql = """
-            INSERT INTO RequestForLeave 
-            (created_by, created_time, title, [from], [to], reason, status)
-            VALUES (?, GETDATE(), ?, ?, ?, ?, ?)
-        """;
+        INSERT INTO RequestForLeave 
+        (created_by, created_time, title, [from], [to], reason, status)
+        VALUES (?, GETDATE(), ?, ?, ?, ?, ?)
+    """;
         try {
             connection.setAutoCommit(false);
             PreparedStatement stm = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -93,11 +93,33 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
             stm.setString(5, model.getReason());
             stm.setInt(6, model.getStatus());
             stm.executeUpdate();
-            connection.commit();
+
             ResultSet rs = stm.getGeneratedKeys();
             if (rs.next()) {
                 model.setId(rs.getInt(1));
             }
+
+            // 📨 Gửi thông báo cho cấp trên
+            String getSupervisorSQL = "SELECT supervisorid FROM Employee WHERE eid = ?";
+            PreparedStatement stm2 = connection.prepareStatement(getSupervisorSQL);
+            stm2.setInt(1, model.getCreated_by().getId());
+            ResultSet rs2 = stm2.executeQuery();
+            if (rs2.next()) {
+                int supervisorId = rs2.getInt("supervisorid");
+                if (supervisorId != 0) {
+                    NotificationDBContext notiDB = new NotificationDBContext();
+                    model.Notification n = new model.Notification();
+                    n.setEid(supervisorId);
+                    n.setMessage("📩 Nhân viên " + model.getCreated_by().getName() + " vừa gửi đơn nghỉ phép mới cần bạn duyệt.");
+                    n.setCreatedTime(new java.sql.Timestamp(System.currentTimeMillis()));
+                    n.setIsSeen(false);
+                    notiDB.insert(n);
+                }
+            }
+
+            connection.commit();
+            System.out.println("✅ insert + notify supervisor OK");
+
         } catch (SQLException ex) {
             try {
                 connection.rollback();
@@ -137,19 +159,70 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
             closeConnection();
         }
     }
+// Duyệt / Từ chối + Gửi thông báo tự động
 
-    // Duyệt / Từ chối
     public void updateStatus(int rid, int status, int processedBy) {
         String sql = "UPDATE RequestForLeave SET status = ?, processed_by = ? WHERE rid = ?";
         try {
             connection.setAutoCommit(false);
+
+            // 1️⃣ Cập nhật trạng thái đơn nghỉ phép
             PreparedStatement stm = connection.prepareStatement(sql);
             stm.setInt(1, status);
             stm.setInt(2, processedBy);
             stm.setInt(3, rid);
             int rows = stm.executeUpdate();
-            System.out.println("⚙️ updateStatus rows = " + rows); // Log debug
+
+            // 2️⃣ Nếu cập nhật thành công → Lấy thông tin chi tiết để gửi thông báo
+            if (rows > 0) {
+                String getInfoSQL = """
+                SELECT 
+                    r.created_by, r.processed_by, r.status,
+                    c.ename AS created_name,
+                    p.ename AS processed_name
+                FROM RequestForLeave r
+                JOIN Employee c ON c.eid = r.created_by
+                LEFT JOIN Employee p ON p.eid = r.processed_by
+                WHERE r.rid = ?
+            """;
+
+                PreparedStatement infoStm = connection.prepareStatement(getInfoSQL);
+                infoStm.setInt(1, rid);
+                ResultSet rs = infoStm.executeQuery();
+
+                if (rs.next()) {
+                    int createdBy = rs.getInt("created_by");
+                    int processedByEmp = rs.getInt("processed_by");
+                    String createdName = rs.getString("created_name");
+                    String processedName = rs.getString("processed_name");
+                    int st = rs.getInt("status");
+
+                    // 3️⃣ Tạo nội dung thông báo
+                    String message;
+                    if (processedByEmp == createdBy) {
+                        message = "Đơn nghỉ phép của bạn đã được tự động duyệt.";
+                    } else if (st == 1) {
+                        message = "Đơn nghỉ phép của bạn đã được duyệt bởi " + processedName + ".";
+                    } else if (st == 2) {
+                        message = "Đơn nghỉ phép của bạn đã bị từ chối bởi " + processedName + ".";
+                    } else {
+                        message = "Trạng thái đơn nghỉ phép của bạn đã được cập nhật.";
+                    }
+
+                    // 4️⃣ Ghi thông báo vào bảng Notification
+                    NotificationDBContext notiDB = new NotificationDBContext();
+                    model.Notification n = new model.Notification();
+                    n.setEid(createdBy);
+                    n.setMessage(message);
+                    n.setCreatedTime(new java.sql.Timestamp(System.currentTimeMillis()));
+                    n.setIsSeen(false);
+                    notiDB.insert(n);
+                }
+            }
+
             connection.commit();
+            System.out.println("✅ updateStatus + notification OK!");
+
         } catch (SQLException ex) {
             try {
                 connection.rollback();
@@ -286,6 +359,7 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
     public void update(RequestForLeave model) {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
+
     public ArrayList<RequestForLeave> getLeavesInRange(java.sql.Date from, java.sql.Date to) {
         ArrayList<RequestForLeave> list = new ArrayList<>();
         String sql = """
