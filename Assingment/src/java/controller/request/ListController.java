@@ -16,7 +16,6 @@ import model.iam.User;
 @WebServlet(urlPatterns = "/request/list")
 public class ListController extends BaseRequiredAuthorizationController {
 
-    // Trong file: controller.request.ListController.java
     @Override
     protected void processGet(HttpServletRequest req, HttpServletResponse resp, User user)
             throws ServletException, IOException {
@@ -25,24 +24,43 @@ public class ListController extends BaseRequiredAuthorizationController {
         int eid = enrollDB.getEmployeeIdByUserId(user.getId());
         Employee emp = enrollDB.get(eid);
 
-        RequestForLeaveDBContext db = new RequestForLeaveDBContext();
-        ArrayList<RequestForLeave> rfls = db.getByEmployeeAndSubodiaries(eid);
+        // --- Phân trang
+        int pagesize = 10;
+        String pageParam = req.getParameter("page");
+        int pageindex = 1;
+        if (pageParam != null) {
+            try {
+                pageindex = Integer.parseInt(pageParam);
+            } catch (NumberFormatException e) {
+                pageindex = 1;
+            }
+        }
 
-        // ✅ Lấy thông báo từ session (nếu có)
+        // --- Lấy dữ liệu từ DB
+        RequestForLeaveDBContext db = new RequestForLeaveDBContext();
+        ArrayList<RequestForLeave> rfls = db.getByEmployeeAndSubodiaries(eid, pageindex, pagesize);
+        int count = db.countByEmployeeAndSubodiaries(eid);
+        int totalpage = (count % pagesize == 0) ? (count / pagesize) : (count / pagesize + 1);
+
+        // --- Lấy thông báo từ session (nếu có)
         String message = (String) req.getSession().getAttribute("message");
         if (message != null) {
             req.setAttribute("message", message);
             req.getSession().removeAttribute("message");
         }
 
+        // --- Set attribute cho JSP
         req.setAttribute("rfls", rfls);
         req.setAttribute("employee", emp);
+        req.setAttribute("pageindex", pageindex);
+        req.setAttribute("totalpage", totalpage);
 
         req.getRequestDispatcher("../view/request/list.jsp").forward(req, resp);
     }
 
     @Override
-    protected void processPost(HttpServletRequest req, HttpServletResponse resp, User user) throws ServletException, IOException {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    protected void processPost(HttpServletRequest req, HttpServletResponse resp, User user)
+            throws ServletException, IOException {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

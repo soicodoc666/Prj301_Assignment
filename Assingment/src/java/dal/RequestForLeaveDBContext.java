@@ -9,71 +9,71 @@ import model.Employee;
 
 public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
 
-    // Lấy tất cả đơn nghỉ phép của nhân viên và cấp dưới
-    public ArrayList<RequestForLeave> getByEmployeeAndSubodiaries(int eid) {
-        ArrayList<RequestForLeave> rfls = new ArrayList<>();
-        String sql = """
-            WITH Org AS (
-                SELECT *, 0 AS lvl FROM Employee e WHERE e.eid = ?
-                UNION ALL
-                SELECT c.*, o.lvl + 1 AS lvl 
-                FROM Employee c 
-                JOIN Org o ON c.supervisorid = o.eid
-            )
-            SELECT
-                r.rid,
-                r.created_by,
-                e.ename AS created_name,
-                r.title,
-                r.created_time,
-                r.[from],
-                r.[to],
-                r.reason,
-                r.status,
-                r.processed_by,
-                p.ename AS processed_name
-            FROM Org e 
-            INNER JOIN RequestForLeave r ON e.eid = r.created_by
-            LEFT JOIN Employee p ON p.eid = r.processed_by
-            ORDER BY r.created_time ASC
-        """;
-
-        try (PreparedStatement stm = connection.prepareStatement(sql)) {
-            stm.setInt(1, eid);
-            ResultSet rs = stm.executeQuery();
-
-            while (rs.next()) {
-                RequestForLeave rfl = new RequestForLeave();
-                rfl.setId(rs.getInt("rid"));
-                rfl.setTitle(rs.getString("title"));
-                rfl.setCreated_time(rs.getTimestamp("created_time"));
-                rfl.setFrom(rs.getDate("from"));
-                rfl.setTo(rs.getDate("to"));
-                rfl.setReason(rs.getString("reason"));
-                rfl.setStatus(rs.getInt("status"));
-
-                Employee created_by = new Employee();
-                created_by.setId(rs.getInt("created_by"));
-                created_by.setName(rs.getString("created_name"));
-                rfl.setCreated_by(created_by);
-
-                int processed_by_id = rs.getInt("processed_by");
-                if (processed_by_id != 0) {
-                    Employee processed_by = new Employee();
-                    processed_by.setId(rs.getInt("processed_by"));
-                    processed_by.setName(rs.getString("processed_name"));
-                    rfl.setProcessed_by(processed_by);
-                }
-
-                rfls.add(rfl);
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(RequestForLeaveDBContext.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            closeConnection();
-        }
-        return rfls;
-    }
+//    // Lấy tất cả đơn nghỉ phép của nhân viên và cấp dưới
+//    public ArrayList<RequestForLeave> getByEmployeeAndSubodiaries(int eid) {
+//        ArrayList<RequestForLeave> rfls = new ArrayList<>();
+//        String sql = """
+//            WITH Org AS (
+//                SELECT *, 0 AS lvl FROM Employee e WHERE e.eid = ?
+//                UNION ALL
+//                SELECT c.*, o.lvl + 1 AS lvl 
+//                FROM Employee c 
+//                JOIN Org o ON c.supervisorid = o.eid
+//            )
+//           SELECT
+//                r.rid,
+//                r.created_by,
+//                e.ename AS created_name,    -- người tạo
+//                r.title,
+//                r.created_time,
+//                r.[from],
+//                r.[to],
+//                r.reason,
+//                r.status,
+//                r.processed_by,
+//                p.ename AS processed_name   -- người xử lý
+//            FROM Employee e
+//            INNER JOIN RequestForLeave r ON e.eid = r.created_by
+//            LEFT JOIN Employee p ON p.eid = r.processed_by
+//            ORDER BY r.created_time DESC;
+//        """;
+//
+//        try (PreparedStatement stm = connection.prepareStatement(sql)) {
+//            stm.setInt(1, eid);
+//            ResultSet rs = stm.executeQuery();
+//
+//            while (rs.next()) {
+//                RequestForLeave rfl = new RequestForLeave();
+//                rfl.setId(rs.getInt("rid"));
+//                rfl.setTitle(rs.getString("title"));
+//                rfl.setCreated_time(rs.getTimestamp("created_time"));
+//                rfl.setFrom(rs.getDate("from"));
+//                rfl.setTo(rs.getDate("to"));
+//                rfl.setReason(rs.getString("reason"));
+//                rfl.setStatus(rs.getInt("status"));
+//
+//                Employee created_by = new Employee();
+//                created_by.setId(rs.getInt("created_by"));
+//                created_by.setName(rs.getString("created_name"));
+//                rfl.setCreated_by(created_by);
+//
+//                int processed_by_id = rs.getInt("processed_by");
+//                if (processed_by_id != 0) {
+//                    Employee processed_by = new Employee();
+//                    processed_by.setId(rs.getInt("processed_by"));
+//                    processed_by.setName(rs.getString("processed_name"));
+//                    rfl.setProcessed_by(processed_by);
+//                }
+//
+//                rfls.add(rfl);
+//            }
+//        } catch (SQLException ex) {
+//            Logger.getLogger(RequestForLeaveDBContext.class.getName()).log(Level.SEVERE, null, ex);
+//        } finally {
+//            closeConnection();
+//        }
+//        return rfls;
+//    }
 
     // Thêm đơn nghỉ phép mới
     @Override
@@ -358,46 +358,119 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
     @Override
     public void update(RequestForLeave model) {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+
+    }
+    // --- Helper map ResultSet sang RequestForLeave ---
+
+    private RequestForLeave mapResultSetToRequest(ResultSet rs) throws SQLException {
+        RequestForLeave rfl = new RequestForLeave();
+        rfl.setId(rs.getInt("rid"));
+        rfl.setTitle(rs.getString("title"));
+        rfl.setReason(rs.getString("reason"));
+        rfl.setStatus(rs.getInt("status"));
+        rfl.setFrom(rs.getDate("from"));
+        rfl.setTo(rs.getDate("to"));
+        rfl.setCreated_time(rs.getTimestamp("created_time"));
+
+        // Người tạo
+        Employee creator = new Employee();
+        creator.setId(rs.getInt("created_by"));
+        creator.setName(rs.getString("created_name"));
+        rfl.setCreated_by(creator);
+
+        // Người xử lý
+        int pid = rs.getInt("processed_by");
+        if (!rs.wasNull()) {
+            Employee processor = new Employee();
+            processor.setId(pid);
+            processor.setName(rs.getString("processed_name"));
+            rfl.setProcessed_by(processor);
+        } else {
+            rfl.setProcessed_by(null);
+        }
+
+        return rfl;
     }
 
+    // --- Lấy danh sách nhân viên và cấp dưới, phân trang ---
+    public ArrayList<RequestForLeave> getByEmployeeAndSubodiaries(int eid, int pageindex, int pagesize) {
+        ArrayList<RequestForLeave> list = new ArrayList<>();
+        String sql = """
+            SELECT r.*, 
+                   c.ename AS created_name, 
+                   p.ename AS processed_name
+            FROM RequestForLeave r
+            INNER JOIN Employee c ON r.created_by = c.eid
+            LEFT JOIN Employee p ON r.processed_by = p.eid
+            WHERE r.created_by = ? OR r.created_by IN (SELECT eid FROM Employee WHERE supervisorid = ?)
+            ORDER BY r.created_time DESC
+            OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+        """;
+
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
+            stm.setInt(1, eid);
+            stm.setInt(2, eid);
+            stm.setInt(3, (pageindex - 1) * pagesize);
+            stm.setInt(4, pagesize);
+
+            ResultSet rs = stm.executeQuery();
+            while (rs.next()) {
+                list.add(mapResultSetToRequest(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeConnection();
+        }
+
+        return list;
+    }
+
+    // --- Đếm tổng số đơn ---
+    public int countByEmployeeAndSubodiaries(int eid) {
+        int count = 0;
+        String sql = """
+            SELECT COUNT(*) 
+            FROM RequestForLeave r
+            WHERE r.created_by = ? OR r.created_by IN (SELECT eid FROM Employee WHERE supervisorid = ?)
+        """;
+
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
+            stm.setInt(1, eid);
+            stm.setInt(2, eid);
+            ResultSet rs = stm.executeQuery();
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeConnection();
+        }
+
+        return count;
+    }
+
+    // --- Lấy danh sách theo khoảng thời gian ---
     public ArrayList<RequestForLeave> getLeavesInRange(java.sql.Date from, java.sql.Date to) {
         ArrayList<RequestForLeave> list = new ArrayList<>();
         String sql = """
-        SELECT 
-            r.rid,
-            r.created_by,
-            e.ename AS created_name,
-            r.title,
-            r.[from],
-            r.[to],
-            r.reason,
-            r.status
-        FROM RequestForLeave r
-        JOIN Employee e ON e.eid = r.created_by
-        WHERE r.[to] >= ? 
-          AND r.[from] <= ? 
-          AND r.status = 1
-        ORDER BY e.ename
-    """;
+            SELECT r.*, 
+                   c.ename AS created_name, 
+                   p.ename AS processed_name
+            FROM RequestForLeave r
+            JOIN Employee c ON r.created_by = c.eid
+            LEFT JOIN Employee p ON r.processed_by = p.eid
+            WHERE r.[to] >= ? AND r.[from] <= ? AND r.status = 1
+            ORDER BY c.ename
+        """;
+
         try (PreparedStatement stm = connection.prepareStatement(sql)) {
             stm.setDate(1, from);
             stm.setDate(2, to);
             ResultSet rs = stm.executeQuery();
             while (rs.next()) {
-                RequestForLeave rfl = new RequestForLeave();
-                rfl.setId(rs.getInt("rid"));
-                rfl.setTitle(rs.getString("title"));
-                rfl.setFrom(rs.getDate("from"));
-                rfl.setTo(rs.getDate("to"));
-                rfl.setReason(rs.getString("reason"));
-                rfl.setStatus(rs.getInt("status"));
-
-                Employee emp = new Employee();
-                emp.setId(rs.getInt("created_by"));
-                emp.setName(rs.getString("created_name"));
-                rfl.setCreated_by(emp);
-
-                list.add(rfl);
+                list.add(mapResultSetToRequest(rs));
             }
         } catch (SQLException ex) {
             Logger.getLogger(RequestForLeaveDBContext.class.getName()).log(Level.SEVERE, null, ex);
@@ -407,4 +480,5 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
         return list;
     }
 
+   
 }
