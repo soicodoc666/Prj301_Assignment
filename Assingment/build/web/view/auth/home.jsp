@@ -186,10 +186,10 @@
                     </c:if>
                 </div>
                 <div class="dropdown" id="dropdownMenu">        
-                    </form>
-                    <a href="profile">Thông tin tài khoản</a>
-                    <a href="logout">Đăng xuất</a>
+                    <a href="${pageContext.request.contextPath}/auth/info">Thông tin tài khoản</a>
+                    <a href="${pageContext.request.contextPath}/logout">Đăng xuất</a>
                 </div>
+
             </div>
         </header>
 
