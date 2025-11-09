@@ -138,15 +138,7 @@
     </head>
     <body>
         <header>
-            <h2>📅 Agenda - Tình hình nhân sự</h2>
-            <div class="user-menu" onclick="toggleMenu()">
-                <span>Xin chào, <c:out value="${sessionScope.user.displayname}" /></span>
-                <div class="avatar-small"></div>
-                <div class="dropdown" id="dropdownMenu">
-                    <a href="../profile">Thông tin tài khoản</a>
-                    <a href="../logout">Đăng xuất</a>
-                </div>
-            </div>
+            <h2>📅 Agenda - Tình hình nhân sự</h2>  
         </header>
 
         <div class="container">
