@@ -74,7 +74,6 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
 //        }
 //        return rfls;
 //    }
-
     // Thêm đơn nghỉ phép mới
     @Override
     public void insert(RequestForLeave model) {
@@ -391,65 +390,75 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
 
         return rfl;
     }
+public ArrayList<RequestForLeave> getByEmployeeAndSubodiaries(int eid, int pageindex, int pagesize, String keyword) {
+    ArrayList<RequestForLeave> list = new ArrayList<>();
+    String sql = """
+        WITH Org AS (
+            SELECT eid FROM Employee WHERE eid = ?
+            UNION ALL
+            SELECT e.eid FROM Employee e 
+            JOIN Org o ON e.supervisorid = o.eid
+        )
+        SELECT 
+            r.rid, r.title, r.reason, r.status, r.[from], r.[to], r.created_time,
+            r.created_by, r.processed_by,
+            c.ename AS created_name,
+            p.ename AS processed_name
+        FROM RequestForLeave r
+        JOIN Org o ON o.eid = r.created_by
+        JOIN Employee c ON c.eid = r.created_by
+        LEFT JOIN Employee p ON p.eid = r.processed_by
+        WHERE c.ename LIKE ?
+        ORDER BY r.created_time DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    """;
 
-    // --- Lấy danh sách nhân viên và cấp dưới, phân trang ---
-    public ArrayList<RequestForLeave> getByEmployeeAndSubodiaries(int eid, int pageindex, int pagesize) {
-        ArrayList<RequestForLeave> list = new ArrayList<>();
-        String sql = """
-            SELECT r.*, 
-                   c.ename AS created_name, 
-                   p.ename AS processed_name
-            FROM RequestForLeave r
-            INNER JOIN Employee c ON r.created_by = c.eid
-            LEFT JOIN Employee p ON r.processed_by = p.eid
-            WHERE r.created_by = ? OR r.created_by IN (SELECT eid FROM Employee WHERE supervisorid = ?)
-            ORDER BY r.created_time DESC
-            OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
-        """;
+    try (PreparedStatement stm = connection.prepareStatement(sql)) {
+        stm.setInt(1, eid);
+        stm.setString(2, "%" + keyword + "%");
+        stm.setInt(3, (pageindex - 1) * pagesize);
+        stm.setInt(4, pagesize);
+        ResultSet rs = stm.executeQuery();
 
-        try (PreparedStatement stm = connection.prepareStatement(sql)) {
-            stm.setInt(1, eid);
-            stm.setInt(2, eid);
-            stm.setInt(3, (pageindex - 1) * pagesize);
-            stm.setInt(4, pagesize);
-
-            ResultSet rs = stm.executeQuery();
-            while (rs.next()) {
-                list.add(mapResultSetToRequest(rs));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            closeConnection();
+        while (rs.next()) {
+            RequestForLeave rfl = mapResultSetToRequest(rs);
+            list.add(rfl);
         }
-
-        return list;
+    } catch (SQLException e) {
+        e.printStackTrace();
     }
+    return list;
+}
 
-    // --- Đếm tổng số đơn ---
-    public int countByEmployeeAndSubodiaries(int eid) {
-        int count = 0;
-        String sql = """
-            SELECT COUNT(*) 
-            FROM RequestForLeave r
-            WHERE r.created_by = ? OR r.created_by IN (SELECT eid FROM Employee WHERE supervisorid = ?)
-        """;
+public int countByEmployeeAndSubodiaries(int eid, String keyword) {
+    int count = 0;
+    String sql = """
+        WITH Org AS (
+            SELECT eid FROM Employee WHERE eid = ?
+            UNION ALL
+            SELECT e.eid FROM Employee e
+            JOIN Org o ON e.supervisorid = o.eid
+        )
+        SELECT COUNT(*) AS total
+        FROM RequestForLeave r
+        JOIN Org o ON o.eid = r.created_by
+        JOIN Employee c ON c.eid = r.created_by
+        WHERE c.ename LIKE ?
+    """;
 
-        try (PreparedStatement stm = connection.prepareStatement(sql)) {
-            stm.setInt(1, eid);
-            stm.setInt(2, eid);
-            ResultSet rs = stm.executeQuery();
-            if (rs.next()) {
-                count = rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            closeConnection();
+    try (PreparedStatement stm = connection.prepareStatement(sql)) {
+        stm.setInt(1, eid);
+        stm.setString(2, "%" + keyword + "%");
+        ResultSet rs = stm.executeQuery();
+        if (rs.next()) {
+            count = rs.getInt("total");
         }
-
-        return count;
+    } catch (SQLException ex) {
+        ex.printStackTrace();
     }
+    return count;
+}
+
 
     // --- Lấy danh sách theo khoảng thời gian ---
     public ArrayList<RequestForLeave> getLeavesInRange(java.sql.Date from, java.sql.Date to) {
@@ -480,5 +489,4 @@ public class RequestForLeaveDBContext extends DBContext<RequestForLeave> {
         return list;
     }
 
-   
 }

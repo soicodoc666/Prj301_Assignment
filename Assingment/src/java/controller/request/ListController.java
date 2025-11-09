@@ -24,10 +24,10 @@ public class ListController extends BaseRequiredAuthorizationController {
         int eid = enrollDB.getEmployeeIdByUserId(user.getId());
         Employee emp = enrollDB.get(eid);
 
-        // --- Phân trang
+        // --- Phân trang ---
         int pagesize = 10;
-        String pageParam = req.getParameter("page");
         int pageindex = 1;
+        String pageParam = req.getParameter("page");
         if (pageParam != null) {
             try {
                 pageindex = Integer.parseInt(pageParam);
@@ -36,24 +36,38 @@ public class ListController extends BaseRequiredAuthorizationController {
             }
         }
 
-        // --- Lấy dữ liệu từ DB
-        RequestForLeaveDBContext db = new RequestForLeaveDBContext();
-        ArrayList<RequestForLeave> rfls = db.getByEmployeeAndSubodiaries(eid, pageindex, pagesize);
-        int count = db.countByEmployeeAndSubodiaries(eid);
-        int totalpage = (count % pagesize == 0) ? (count / pagesize) : (count / pagesize + 1);
+        // --- Lấy từ khóa tìm kiếm ---
+        String keyword = req.getParameter("keyword");
+        if (keyword == null) {
+            keyword = "";
+        }
 
-        // --- Lấy thông báo từ session (nếu có)
+        // --- Lấy dữ liệu ---
+        RequestForLeaveDBContext db = new RequestForLeaveDBContext();
+        ArrayList<RequestForLeave> rfls = db.getByEmployeeAndSubodiaries(eid, pageindex, pagesize, keyword);
+        int count = db.countByEmployeeAndSubodiaries(eid, keyword);
+
+        // --- Tính tổng số trang ---
+        int totalpage = (count % pagesize == 0) ? (count / pagesize) : (count / pagesize + 1);
+        if (totalpage == 0) {
+            totalpage = 1;
+        }
+
+        // --- Thông báo từ session ---
         String message = (String) req.getSession().getAttribute("message");
         if (message != null) {
             req.setAttribute("message", message);
             req.getSession().removeAttribute("message");
         }
 
-        // --- Set attribute cho JSP
+        // --- Gửi dữ liệu cho JSP ---
         req.setAttribute("rfls", rfls);
         req.setAttribute("employee", emp);
         req.setAttribute("pageindex", pageindex);
         req.setAttribute("totalpage", totalpage);
+        req.setAttribute("keyword", keyword); // để giữ lại khi search
+
+        System.out.println("[DEBUG] count=" + count + ", totalpage=" + totalpage + ", rfls.size=" + rfls.size());
 
         req.getRequestDispatcher("../view/request/list.jsp").forward(req, resp);
     }

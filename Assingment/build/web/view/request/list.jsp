@@ -165,6 +165,13 @@
                 </div>
                 <c:remove var="error" scope="session"/>
             </c:if>
+            <form action="${pageContext.request.contextPath}/request/list" method="get" style="margin-bottom: 15px; text-align: right;">
+                <input type="text" name="keyword" value="${param.keyword}" placeholder="🔍 Tìm theo tên người tạo..." 
+                       style="padding:6px 10px; border-radius:6px; border:1px solid #ccc; width:250px;">
+                <button type="submit" style="padding:6px 12px; border:none; background-color:#e1251b; color:white; border-radius:6px;">
+                    Tìm kiếm
+                </button>
+            </form>
 
             <table>
                 <thead>
@@ -218,6 +225,43 @@
                     </c:forEach>
                 </tbody>
             </table>
+            <!-- Phân trang -->
+
+            <!-- Phân trang -->
+            <div style="margin-top: 20px; text-align: center;">
+                <c:if test="${totalpage > 1}">
+                    <!-- Trang trước -->
+                    <c:if test="${pageindex > 1}">
+                        <a href="${pageContext.request.contextPath}/request/list?page=${pageindex - 1}" 
+                           style="margin:0 5px; text-decoration:none;">&laquo; Trước</a>
+                    </c:if>
+
+                    <!-- Các số trang -->
+                    <c:forEach begin="1" end="${totalpage}" var="i">
+                        <c:choose>
+                            <c:when test="${i == pageindex}">
+                                <span style="margin:0 5px; font-weight:bold; color:#e1251b;">${i}</span>
+                            </c:when>
+                            <c:otherwise>
+                                <a href="${pageContext.request.contextPath}/request/list?page=${i}" 
+                                   style="margin:0 5px; text-decoration:none; color:#007bff;">${i}</a>
+                            </c:otherwise>
+                        </c:choose>
+                    </c:forEach>
+
+                    <!-- Trang sau -->
+                    <c:if test="${pageindex < totalpage}">
+                        <a href="${pageContext.request.contextPath}/request/list?page=${pageindex + 1}" 
+                           style="margin:0 5px; text-decoration:none;">Sau &raquo;</a>
+                    </c:if>
+                </c:if>
+            </div>
+
+            <!-- Hiển thị số trang hiện tại / tổng số trang -->
+            <div style="text-align:center; margin-top:5px;">
+                Trang ${pageindex} / ${totalpage}
+            </div>
+
 
             <a href="../home" class="back">← Quay lại trang chủ</a>
         </div>
